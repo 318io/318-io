@@ -1,0 +1,18 @@
+use 318_expo
+
+http://docs.mongodb.org/manual/reference/operator/meta/orderby/
+
+
+db.collection.find().sort( { age: -1 } )
+
+db.collection.find()._addSpecial( "$orderby", { age : -1 } )
+db.collection.find( { $query: {}, $orderby: { age : -1 } } )
+
+
+remove document from collection
+
+db.stickers.remove( { sid : 11 } )
+
+Remove a Single Document that Matches a Condition
+
+db.stickers.remove( { sid : 11 }, 1 )

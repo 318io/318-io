@@ -1,0 +1,19 @@
+<?php
+
+dtf_module_weight_more('taxonomy', 'expsearch');
+
+//drupal_set_message('adjusting order');
+
+/*
+function dtf_module_weight_more($modl, $modh) {
+  $weight = db_select('system', 's')
+            ->fields('s', array('weight'))
+            ->condition('name', $modl, '=')
+            ->execute()
+            ->fetchField();
+  db_update('system')
+  ->fields(array('weight' => $weight +1))
+  ->condition('name', $modh, '=')
+  ->execute();
+}
+*/

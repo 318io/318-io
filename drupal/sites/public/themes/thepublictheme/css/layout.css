@@ -1,0 +1,103 @@
+
+footer{
+  font-size: 85%;
+  margin-bottom:40px;
+}
+
+/* Head */
+#page-header{
+  background: #0faaaa url(../images/header.jpg) repeat center;
+  height:140px;
+  background-attachment:fixed;
+  background-size:cover;
+  background-position: center -340px;
+  position:relative;
+  border:1px solid transparent;
+  overflow:hidden;
+}
+
+.site-branding{
+  color: #fff;
+  padding:20px 0px;
+}
+
+.site-branding h1.site-title{
+  font-weight: bold;
+  margin: 0px 0px 0px 0px;
+}
+
+.site-branding a.site-name{
+  font-family: Lobster, cursive;
+  font-size:3em;
+  display: block;
+  color: #fff;
+}
+
+.site-branding a.site-name:hover{
+  color:orange;
+  text-decoration: none;
+}
+
+#pagina-nav {
+  background: #333;
+  color:#fff;
+  font-size: 15px;
+}
+
+#pagina-nav .nav-zone {
+  text-align: right;
+}
+
+#pagina-nav .nav-zone ul {
+  margin: 0;
+  padding: 0;
+  display: inline-block;
+}
+
+#pagina-nav .nav-zone ul > li {
+  display: inline-block;
+  margin: 0;
+  padding: 0 5px;
+}
+
+#pagina-nav .nav-zone ul > li > a {
+  margin: 0;
+  padding: 3px 6px;
+}
+
+#pagina-nav .nav-zone ul > li > a:hover,
+#pagina-nav .nav-zone ul > li > a.active {
+  background: #000;
+  color: #fff;
+  text-decoration: none;
+}
+
+#pagina-nav .nav-zone a {
+  display: block;
+  padding: 0 20px;
+  color: #fff;
+}
+
+/* Breadcrumb */
+#breadcrumb {
+  background-color: #fcfcfc;
+  border: none;
+  padding: 20px 0;
+  margin: 0 0 20px 0;
+  text-transform: uppercase;
+  color:#aaa;
+}
+
+#footer .sitemap{
+  text-align:left;
+}
+
+#footer .sitemap ul.nav li{
+  margin:0;
+  padding: 0;
+}
+
+#footer .sitemap ul.nav li a{
+  margin:0;
+  padding: 0;
+}

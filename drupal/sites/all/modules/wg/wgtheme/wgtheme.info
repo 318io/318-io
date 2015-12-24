@@ -1,0 +1,5 @@
+name = wgtheme
+description = wgtheme module
+package = wg
+dependencies[] = wgbase
+core=7.x

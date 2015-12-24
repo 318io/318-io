@@ -1,0 +1,21 @@
+.statement {
+  color: #575757;
+  font-size: 10pt;
+  padding-left: 35px;
+}
+
+
+#-collection-claim input[type="radio"] {
+  margin-bottom: 0px;
+  margin-left: -20px;
+  margin-right: 0px;
+  margin-top: 4px;
+}
+
+/* disable after update the blocks module in 2015.12.12 */
+#edit-openmosaic {
+  margin-bottom: 0px;
+  margin-left: -20px;
+  margin-right: 0px;
+  margin-top: 4px;
+}

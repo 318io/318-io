@@ -1,0 +1,4 @@
+name = collclaim
+description = "collection claim"
+package = wg
+core = 7.x

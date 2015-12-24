@@ -1,0 +1,5 @@
+name = dt entity and field helper
+description = ...
+package = wg
+core=7.x
+dependencies[] = dt

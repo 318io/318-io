@@ -1,0 +1,89 @@
+<?php
+
+function yaml_set_lib($lib) {
+  variable_set('YAML_LIB', $lib);
+}
+
+function yaml_get_lib() {
+  $lib = variable_get('YAML_LIB', 'phpyaml');
+  switch($lib) {
+    case 'spyc':
+      require_once 'spyc/spyc.php';
+      break;
+    case 'sfYaml':
+      require_once 'sfYaml/sfYaml.php';
+      break;
+    case 'phpyaml':
+      require_once 'sfYaml/sfYaml.php';
+      break;
+
+  }
+  return $lib;
+}
+
+function yaml_load($string) {
+  $lib = yaml_get_lib();
+  $func = 'yaml_load_'.$lib;
+  return $func($string);
+}
+
+
+function yaml_load_file($file) {
+  $lib = yaml_get_lib();
+  $func = 'yaml_load_file_'.$lib;
+  return $func($file);
+}
+
+function yaml_export($array, $print = false) {
+  $lib = yaml_get_lib();
+  $func = 'yaml_export_'.$lib;
+  $s = $func($array);
+  if($print) {
+    echo '<pre>'.$s.'</pre>';
+  }
+  return $s;
+}
+
+function yaml_load_phpyaml($string) {
+  if(strpos($string, 'public://') === 0) {
+    return yaml_load_file_phpyaml($string);
+  }
+  return yaml_parse($string);
+}
+
+function yaml_load_file_phpyaml($file) {
+  $file = drupal_realpath($file);
+  return yaml_parse_file($file);
+}
+
+function yaml_export_phpyaml($array) {
+  return yaml_export_sfYaml($array);
+  // ? the way phpyaml dealing with list is strange~
+  return yaml_emit($array, YAML_UTF8_ENCODING);
+}
+
+function yaml_load_sfYaml($string) {
+  return sfYaml::load($string);
+}
+
+function yaml_load_file_sfYaml($file) {
+  return yaml_load_sfYaml($file);
+}
+
+function yaml_export_sfYaml($array) {
+  return sfYaml::dump($array, 10);
+}
+
+function yaml_load_spyc($string) {
+  return yaml_load_file_spyc($string);
+  return Spyc::YAMLLoadString($string);
+}
+
+function yaml_load_file_spyc($file) {
+  $file = drupal_realpath($file);
+  return Spyc::YAMLLoad($file);
+}
+
+function yaml_export_spyc($array) {
+  return Spyc::YAMLDump($array);
+}

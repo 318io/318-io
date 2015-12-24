@@ -1,0 +1,9 @@
+<?php
+/**
+*  developement tools and some hacks
+**/
+require_once 'dt.inc';
+require_once 'dt.class.inc';
+require_once 'dt.drupalhack.inc';
+require_once 'dt.xml.inc';
+require_once 'dt.dev.inc';

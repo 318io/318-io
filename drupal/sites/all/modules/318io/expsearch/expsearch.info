@@ -1,0 +1,4 @@
+name = Expsearch
+description = "Expanding the search function."
+package = wg
+core = 7.x

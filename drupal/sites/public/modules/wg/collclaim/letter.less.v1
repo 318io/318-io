@@ -1,0 +1,88 @@
+body {
+  font-family: Arial, "AR PL UKai TW", TW-Kai, "標楷體", BiauKai, DFKai-SB, sans-serif;
+}
+
+#main {
+  width: 21cm;
+  padding: 0;
+  border: 0;
+  margin: 0;
+}
+
+
+#background {
+  position: absolute;
+  width: 21cm;
+  height: 29.7cm;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  top: 0;
+  left: 0;
+  z-index: 1;
+}
+
+#envelop {
+  position: absolute;
+  width: 21cm;
+  padding: 0;
+  margin: 0;
+  border: 0;
+  top: 0;
+  left: 0;
+  z-index: 2;
+}
+
+
+//----------------------------- statement ---------------
+
+h2 {
+  text-align: center;
+}
+
+#statement {
+  position: absolute;
+  width: 21cm;
+  border: 0;
+  margin: 0;
+  padding: 10px;
+  top: 29.7cm;
+  left: 0;
+}
+
+#claim_id {
+  position: absolute;
+  width: 2cm;
+  border: 0;
+  margin: 0;
+  padding: 0;
+  top: 29.8cm;
+  left: 19cm;  
+  text-align: right;
+  color: DarkGray;
+  font-size: 35px; 
+  //border: 5px solid red;
+}
+
+.name {
+   width: 160px;
+}
+
+.year {
+   width: 80px;
+}
+
+.month {
+  width: 40px;
+}
+
+.day {
+  width: 40px;
+}
+
+.to_fill {
+  display: inline-block;
+  border-bottom-style: solid;
+  border-bottom-width: 1px;
+}
+

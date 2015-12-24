@@ -1,0 +1,115 @@
+<?php
+define('COLL_LANG', 'und');
+define('COLL_BATCH_CHUNK_SIZE', 20);
+define('COLL_NEWLINE', ';;;');
+
+require_once 'coll.var.inc';
+require_once 'coll.inc';
+require_once 'coll.admin.inc';
+
+require_once 'coll.crud.inc';
+require_once 'coll.page.inc';
+
+require_once 'coll.deprecated.inc';
+
+function coll_url_inbound_alter(&$path, $original_path, $path_language) {
+  if(is_numeric($path)) {
+    $identifier = (int)$path;
+    $path = 'node/'.$identifier;
+  }
+}
+
+function coll_url_outbound_alter(&$path, &$options, $original_path) {
+  if(preg_match('|^node/([0-9]+)$|', $path, $m)) {
+    $path = $m[1];
+  }
+}
+
+function coll_permission() {
+  return array(
+           'view collection' => array(
+             'title' => t('view collection'),
+             'description' => t('.'),
+           ),
+           'update collection' => array(
+             'title' => t('update collection'),
+             'description' => t('.'),
+           ),
+           'delete collection' => array(
+             'title' => t('delete collection'),
+             'description' => t('.'),
+           ),
+           'add collection' => array(
+             'title' => t('add collection'),
+             'description' => t('.'),
+           ),
+           'admin collection' => array(
+             'title' => t('admin collection'),
+             'description' => t('.'),
+           ),
+         );
+}
+
+function coll_menu() {
+  $items['admin/config/coll'] = DH::hook_menu_adminitem_block('collection', 'Administer collection.', array('admin collection'));
+  return $items;
+}
+
+function coll_wgblock() {
+  $items =
+    array(
+      'searchbox' => array(
+        'content_cb' => '_coll_block_searchbox',
+      ),
+    );
+  return $items;
+}
+
+function coll_field_formatter_info() {
+  return array(
+           'taxonomy_term_reference_collsearch' => array(
+             'label' => t('Collection Search'),
+             'field types' => array('taxonomy_term_reference'),
+           ),
+         );
+}
+
+function coll_field_formatter_view($entity_type, $entity, $field, $instance, $langcode, $items, $display) {
+  $element = array();
+  switch($display['type']) {
+    case 'taxonomy_term_reference_collsearch':
+      foreach ($items as $delta => $item) {
+        if ($item['tid'] == 'autocreate') {
+          $element[$delta] = array(
+                               '#markup' => check_plain($item['name']),
+                             );
+        } else {
+          $term = taxonomy_term_load($item['tid']);
+          $element[$delta] = array(
+                               '#type' => 'link',
+                               '#title' => $term->name,
+                               '#href' => 'search',
+                               '#options' => array('query'=>array('qs'=>'term:'.$term->name)),
+                             );
+        }
+      }
+
+  }
+  return $element;
+}
+
+function coll_entity_info_alter(&$entity_info) {
+  $entity_info['node']['view modes']['list'] = array(
+        'label' => t('list'),
+        'custom settings' => TRUE,
+      );
+  $entity_info['node']['view modes']['grid'] = array(
+        'label' => t('grid'),
+        'custom settings' => TRUE,
+      );
+}
+
+function coll_preprocess_html(&$variables) {
+  drupal_add_css(drupal_get_path('module', 'coll') . '/coll.css');
+  drupal_add_js(drupal_get_path('module', 'coll') . '/coll.js');
+}

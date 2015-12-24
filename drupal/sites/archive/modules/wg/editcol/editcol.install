@@ -1,0 +1,4 @@
+<?php
+
+
+dtf_module_weight_more('expsearch', 'editcol');

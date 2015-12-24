@@ -1,0 +1,212 @@
+<?php
+require_once 'wgtheme.inc';
+
+function wgtheme_page_alter($page) {
+  $mobileoptimized = array(
+                       '#type' => 'html_tag',
+                       '#tag' => 'meta',
+                       '#attributes' => array(
+                         'name' =>  'MobileOptimized',
+                         'content' =>  'width'
+                       )
+                     );
+  $handheldfriendly = array(
+                        '#type' => 'html_tag',
+                        '#tag' => 'meta',
+                        '#attributes' => array(
+                          'name' =>  'HandheldFriendly',
+                          'content' =>  'true'
+                        )
+                      );
+  $viewport = array(
+                '#type' => 'html_tag',
+                '#tag' => 'meta',
+                '#attributes' => array(
+                  'name' =>  'viewport',
+                  'content' =>  'width=device-width, initial-scale=1'
+                )
+              );
+  drupal_add_html_head($mobileoptimized, 'MobileOptimized');
+  drupal_add_html_head($handheldfriendly, 'HandheldFriendly');
+  drupal_add_html_head($viewport, 'viewport');
+}
+
+function wgtheme_process_html(&$vars) {
+  $alias = drupal_get_path_alias();
+  if($alias) {
+    $c1 = DT::explode_get_first('/', $alias);
+    $vars['classes'] .= ' page-'.$c1;
+    $c2 = preg_replace('%[^a-zA-Z0-9]%', '-', $alias);
+    $vars['classes'] .= ' page-'.$c2;
+  }
+}
+
+function wgtheme_preprocess_page(&$vars) {
+  DH::add_module_js_file('wgtheme', 'script.js');
+  $status = drupal_get_http_header("status");
+  switch($status) {
+    case '404 Not Found':
+      $suggestions = $vars['theme_hook_suggestions'];
+      $suggestions[] = 'page__404';
+      $vars['theme_hook_suggestions'] = $suggestions;
+      return;
+      break;
+    case '403 Forbidden':
+      $suggestions = $vars['theme_hook_suggestions'];
+      $suggestions[] = 'page__403';
+      $vars['theme_hook_suggestions'] = $suggestions;
+      return;
+      break;
+    case '':
+      break;
+    default:
+  }
+
+  $suggestions = $vars['theme_hook_suggestions'];
+  if(array_key_exists('node', $vars) && $vars['node']) {
+    $last = array_pop($suggestions);
+    $suggestions[] = 'page__node__'.$vars['node']->type;
+    $suggestions[] = $last;
+    $alias = drupal_get_path_alias();
+    if($alias) {
+      $suggestions[] = $vars['node']->type.'__'.$alias;
+      $suggestions[] = 'page'.'__'.$alias;
+    }
+    $vars['theme_hook_suggestions'] = $suggestions;
+  }
+}
+
+function wgtheme_preprocess_taxonomy_term(&$vars) {
+  if(!DT::array_get($vars, 'classes_array')) $vars['classes_array'] = array();
+  $vars['classes_array'][] = 'term-viewmode-'.$vars['view_mode'];
+}
+
+function wgtheme_preprocess_node(&$vars) {
+  if(!DT::array_get($vars, 'classes_array')) $vars['classes_array'] = array();
+  $vars['classes_array'][] = 'node-viewmode-'.$vars['view_mode'];
+
+  if($vars['display_submitted']) {
+    $vars['submitted_username'] = strip_tags($vars['name']);
+    $vars['submitted_datetime'] = format_date($vars['node']->created, 'custom', 'Y.m.d');
+    $vars['submitted_tags']     = render($vars['content']['field_tag']);
+
+    $submitted = t('!datetime <div class="tags">!tags</div>',
+                   array(
+                     '!datetime' => 	$vars['submitted_datetime'],
+                     '!tags' => $vars['submitted_tags'],
+                   )
+                  );
+
+    $vars['submitted'] = $submitted;
+  }
+
+  if (array_key_exists('node-readmore', $vars['content']['links']['node']['#links']) && $vars['content']['links']['node']['#links']['node-readmore']) {
+    $vars['readmore'] =
+      array('#markup' => t('<a href="!title" class="btn btn-primary" role="button">繼續閱讀</a>',
+                           array('!title' => $vars['node_url'],)
+                          )
+           );
+    unset($vars['content']['links']['node']['#links']['node-readmore']);
+  }
+  if($vars['view_mode'] != 'full') {
+    $latest = array_shift($vars['theme_hook_suggestions']);
+    $nvmtpl = 'node__' . $vars['type'] . '__'.$vars['view_mode'];
+    array_unshift($vars['theme_hook_suggestions'], $nvmtpl);
+    array_unshift($vars['theme_hook_suggestions'], $latest);
+  }
+
+  if(property_exists($vars['node'], 'rowindex')) {
+    $node = $vars['node'];
+    $div = ($node->rowindex % 2)?'even':'odd';
+    $vars['classes_array'][] = $div;
+  }
+
+}
+
+function wgtheme_preprocess_block(&$vars) {
+  $vars['classes_array'][]='clearfix';
+}
+
+function _wgtheme_parse_breadcrumb($breadcrumbs, $path) {
+  $hometext = '<i class="fa fa-home"></i>';
+  $home = array_shift($breadcrumbs);
+  $home = l($hometext, '<front>', array('html' =>true, 'attributes'=>array('class'=>array('home') ) ));
+  $last = array_pop($breadcrumbs);
+
+  $breadcrumbs = array();
+
+  $parts = explode('/', $path);
+  $len = (count($parts)-1);
+  for($i=0; $i<$len; $i++) {
+    array_pop($parts);
+    $p = implode('/', $parts);
+    $p2 = drupal_lookup_path('source', $p);
+    if(preg_match('%^node/([0-9]+)$%', $p2, $m)) {
+      $n = node_load($m[1]);
+      $l = l($n->title, $p2);
+      array_unshift($breadcrumbs, $l);
+    }
+  }
+  array_unshift($breadcrumbs, $home);
+  array_push($breadcrumbs, $last);
+
+  $out = _wgtheme_theme_breadcrumb($breadcrumbs);
+  return $out;
+}
+
+function _wgtheme_theme_breadcrumb($breadcrumbs, $seperator = ' <i class="fa fa-angle-double-right"></i> ') {
+  $out = '';
+  $ar = array();
+  foreach ($breadcrumbs as $key => $breadcrumb) {
+    if(is_array($breadcrumb) && array_key_exists('data', $breadcrumb)) {
+      $ar[] = $breadcrumb['data'];
+    } else {
+      $ar[] = $breadcrumb;
+    }
+  }
+  $out = implode($seperator, $ar);
+
+  return $out;
+}
+
+function wgtheme_menu_link(array $vars) {
+  $element = $vars['element'];
+  $sub_menu = '';
+
+  if (($element['#href'] == $_GET['q'] || ($element['#href'] == '<front>' && drupal_is_front_page())) && (empty($element['#localized_options']['language']))) {
+    $element['#attributes']['class'][] = 'active';
+  }
+  $output = l($element['#title'], $element['#href'], $element['#localized_options']);
+  return '<li' . drupal_attributes($element['#attributes']) . '>' . $output . $sub_menu . "</li>\n";
+}
+
+function wgtheme_menu_tree(&$vars) {
+  return '<ul class="menu nav navbar-nav navbar-right">' . $vars['tree'] . '</ul>';
+}
+
+function wgtheme_date_popup_process_alter(&$element, &$form_state, $context) {
+  unset($element['date']['#description']);
+  unset($element['date']['#title']);
+  unset($element['time']['#description']);
+}
+
+function wgtheme_theme_registry_alter(&$theme_registry) {
+  if (isset($theme_registry['image'])) {
+    $theme_registry['image']['function'] = '_wgtheme_theme_image';
+  }
+}
+
+function _wgtheme_theme_image($variables) {
+  $title = $variables['title'];
+  $attributes = $variables['attributes'];
+  $attributes['src'] = file_create_url($variables['path']);
+
+  foreach (array('width', 'height', 'alt', 'title') as $key) {
+    if (isset($variables[$key])) {
+      $attributes[$key] = $variables[$key];
+    }
+  }
+  $r = '<img' . drupal_attributes($attributes) . ' />';
+  if($title) $r.='<div class="image-title">'.$title.'</div>';
+  return $r;
+}

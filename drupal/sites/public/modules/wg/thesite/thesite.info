@@ -1,0 +1,4 @@
+name = the site
+description = for this site only
+package = wg
+core = 7.x

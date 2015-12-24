@@ -1,0 +1,4 @@
+name = my development tools
+description = some enhance and misc functions
+package = wg
+core=7.x

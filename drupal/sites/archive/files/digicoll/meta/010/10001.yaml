@@ -1,0 +1,54 @@
+identifier:
+  - '10001'
+mainformat: {  }
+format_category: {  }
+content_category: {  }
+event: {  }
+tagtag: {  }
+description: {  }
+content: {  }
+relcol_partof: {  }
+relcol_relatedto: {  }
+creator: {  }
+provider: {  }
+collector: {  }
+collected_time: {  }
+collected_place: {  }
+collected_method: {  }
+created_time: {  }
+created_place: {  }
+repository: {  }
+repository_id:
+  - A10001
+repository_place: {  }
+condition: {  }
+condition_note: {  }
+material: {  }
+measurement: {  }
+digi_method: {  }
+digi_type: {  }
+digi_path: {  }
+digi_time: {  }
+recorder:
+  - root
+recorded_time:
+  - '12/22/2015 14:21'
+updator: {  }
+updated_time:
+  - '12/22/2015 14:21'
+note: {  }
+public:
+  - 是
+public_note: {  }
+privacy:
+  - 否
+privacy_note: {  }
+high_resolution:
+  - 否
+no_mosaic: {  }
+release:
+  - 否
+license: {  }
+license_note: {  }
+rightgranted: {  }
+rightgranted_note: {  }

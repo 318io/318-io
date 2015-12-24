@@ -1,0 +1,165 @@
+<?php
+
+
+/*
+ table creation query
+ CREATE TABLE articles (
+    ->   id INT UNSIGNED AUTO_INCREMENT NOT NULL PRIMARY KEY,
+    ->   title VARCHAR(200),
+    ->   body TEXT,
+    ->   FULLTEXT (title,body)
+    -> ) ENGINE=MyISAM;
+*/
+function _ft_search_table(array $field_names) {
+
+  $_fields = array_reduce($field_names, function($acc, $name) {
+    $acc = $acc . $name . " TEXT NULL, ";
+    return $acc;
+  }, "");
+
+  $_full_text = array_reduce($field_names, function($acc, $name) {
+    $acc = $acc . $name . ",";
+    return $acc;
+  }, "");
+  if(strlen($_full_text) != 0) $_full_text = 'FULLTEXT (' . substr($_full_text, 0, strlen($_full_text)-1) . ')';
+
+  $char_set = "CHARACTER SET 'utf8'";
+
+  return "CREATE TABLE ft_table ( nid INT UNSIGNED NOT NULL," . $_fields . $_full_text . ") CHARACTER SET 'utf8' ENGINE=MyISAM";
+}
+
+function _build_ftsearch_schema(array $field_names) {
+
+  //dbug_message($field_names);
+
+  $_fields = array_reduce($field_names, function($acc, $name) {
+    $acc[$name] = array('type' => 'text');
+    return $acc;
+  }, array('nid' => array('type' => 'int', 'unsigned' => TRUE, 'not null' => TRUE)));
+
+  //dbug_message($_fields);
+
+  $_full_text = array_reduce($field_names, function($acc, $name) {
+    $acc[] = $name;
+    return $acc;
+  }, array());
+
+/*
+  $schema['ft_table'] = array(
+    'description' => 'Table for full text search',
+    'fields' => $_fields,
+    'fulltext' => $_full_text,
+    'mysql_engine' => 'MyISAM',
+  );
+*/
+  $schema['ft_table'] = array(
+    'description' => 'Table for full text search',
+    'fields' => $_fields,
+    'indexes' => array('fulltext' => $_full_text),
+    'mysql_engine' => 'MyISAM',
+  );
+
+  //dbug_message($schema['ft_table']);
+
+  return $schema;
+}
+
+function _create_ftsearch_table(array $field_names) {
+  db_drop_table('ft_table');
+  //$schema = _build_ftsearch_schema($field_names);
+  //db_create_table('ft_table', $schema['ft_table']);
+  $create_query = _ft_search_table($field_names);
+  db_query($create_query);
+}
+
+
+function expsearch_admin_settings() {
+  /*
+  $types = node_type_get_types();
+
+  foreach($types as $node_type) {
+    $options[$node_type->type] = $node_type->name;
+  }*/
+
+  $fields = field_read_fields(array('entity_type' => 'node', 'bundle' => 'collection'));
+  foreach($fields as $name => $field) {
+    $ftype = $field['type'];
+    if($ftype == 'text_with_summary' || $ftype == 'text_long' || $ftype == 'text') $options[$name] = $name;
+
+    if($ftype == 'taxonomy_term_reference') $options['taxo_'.$name] = $name;
+  }
+
+  $form['expsearch_fields'] = array(
+    '#type' => 'checkboxes',
+    '#title' => t('Fileds for full text search.'),
+    '#options' => $options,
+    '#default_value' => variable_get('ft_columns', array()),
+    '#description' => t('fileds for full text search.'),
+  );
+
+  $form['#submit'][] = 'expsearch_admin_settings_submit'; // form handler
+
+  return system_settings_form($form);
+}
+
+/*
+  $node->job_post_company['und'][0]['value']
+
+  // for taxonomy term
+  $term_id_1 = $node->field_term['und'][0]['tid'];
+  $term_id_2 = $node->field_term['und'][1]['tid'];
+*/
+function _prepare_for_insertion($node) {
+  $ft_columns = variable_get('ft_columns', array());
+  if(empty($ft_columns)) {
+    drupal_set_message("expsearch_node_load(): no full text search table found.");
+    return array();
+  }
+  return array_reduce($ft_columns, function($acc, $column) use ($node) {
+    $pattern = '/^taxo_(.*)/';
+    $match = preg_match($pattern, $column, $matches);
+    if($match) {
+      $tax = "";
+      foreach($node->{$matches[1]}['und'] as $t) {
+        $term = taxonomy_term_load($t['tid']);
+        $tax = $tax . " " . $term->name;
+      }
+      $acc[$column] = $tax;
+    } else {
+      $acc[$column] = $node->{$column}['und'][0]['value'];      
+    }
+    return $acc;
+  }, array('nid' => $node->nid));  
+}
+
+
+function expsearch_admin_settings_submit($form, $form_state) {
+
+  global $kb;
+
+  // create ft_table
+  $db_columns = array();
+  foreach($form_state['values']['expsearch_fields'] as $key => $value) { 
+    //drupal_set_message($value); 
+    if($value) $db_columns[] = $value;
+  }
+  variable_set('ft_columns', $db_columns);
+  _create_ftsearch_table($db_columns);
+
+  // insert all nodes
+  $nodes = node_load_multiple(_node_id_array());
+  foreach($nodes as $node) {
+    $for_insert = _prepare_for_insertion($node);
+    if(!empty($for_insert)) {
+      db_insert('ft_table')->fields($for_insert)->execute();
+    }
+  }
+
+  // build knowledge base
+  $terms = taxonomy_term_load_multiple(_term_id_array());  
+  
+  foreach($terms as $term) {
+    $kb->addInstance($term->tid);
+  }
+}
+

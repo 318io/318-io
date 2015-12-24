@@ -1,0 +1,16 @@
+1. captcha, use session to implement
+3. user login
+4. email confirm
+5. RWD
+6. mouse over floating
+
+
+<div>
+<video controls="controls" height="300" id="video201512514823" poster="" width="400">
+  <source src="http://public.318.io/sites/318_public/files/digicoll/public/012/12898_001.webm" type="video/webm"/>
+  Your browser doesn&#39;t support video.<br />
+  Please download the file: <a href="http://public.318.io/sites/318_public/files/digicoll/public/012/12898_001.webm">video/webm</a>
+</video>
+</div>
+
+<p>&nbsp;</p>

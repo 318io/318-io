@@ -1,0 +1,23 @@
+.claim {
+  box-sizing: border-box;
+  padding: 5px;
+  background-color: #edecea;
+  font-size: 12px;
+  color: #72716f;
+  width: 250px;
+}
+a.squarebutton span {
+  font-size: 11px !important;
+  background: none repeat scroll 0% 0% #f1b411;
+  height: 23px;
+  line-height: 23px;
+  padding: 0px 8px;
+  color: black;
+  float: left;
+  border-radius: 5px;
+}
+
+a.squarebutton {
+}
+
+

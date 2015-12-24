@@ -1,0 +1,39 @@
+<?php
+require_once 'wgbase.inc';
+
+function wgbase_block_info() {
+  $defs = _wg_get_block_defs();
+  $blocks = array();
+  foreach($defs as $key=>$def) {
+    if(!array_key_exists('info', $def)) $def['info'] = $key;
+    $blocks[$key] = array('info' => $def['info']);
+  }
+  return $blocks;
+}
+
+function wgbase_block_view($delta = '') {
+  $defs = _wg_get_block_defs();
+  $block = array();
+  if(array_key_exists($delta, $defs)) {
+    $def = $defs[$delta];
+    if(!array_key_exists('subject', $def)) $def['subject'] = '';
+    if(!array_key_exists('content_args', $def)) $def['content_args'] = array();
+    $block['subject'] = $def['subject'];
+    $func = $def['content_cb'];
+    $args = $def['content_args'];
+    $block['content'] = call_user_func_array($func, $args);
+  }
+  return $block;
+}
+
+function wgbase_wgblock() {
+  $items =
+    array(
+      'power_by_wg'   => array(
+        'info' => t('Power By WG'),
+        'subject' => '',
+        'content_cb' => '_wg_block_power_by_wg',
+      ),
+    );
+  return $items;
+}

@@ -1,0 +1,71 @@
+<?php
+require_once 'thesite.inc';
+require_once 'thesite.page.inc';
+require_once 'thesite.page.block.inc';
+
+function thesite_permission() {
+  return array(
+           'edit self profile link' => array(
+             'title' => t('edit self profile link'),
+             'description' => t('.'),
+           ),
+         );
+}
+
+function thesite_menu() {
+  $items['api/meta/%'] =
+    array(
+      'title' => 'api meta',
+      'page callback' => '_thesite_api_meta',
+      'page arguments' => array(2),
+      'access arguments' => array('access content'),
+    );
+  $items['user/edit'] =
+    array(
+      'title' => 'user edit',
+      'page callback' => '_thesite_user_edit_link',
+      'access arguments' => array('edit self profile link'),
+    );
+  return $items;
+}
+
+function _thesite_user_edit_link() {
+  global $user;
+  $uid = $user->uid;
+  $path = 'user/'.$uid.'/edit';
+  drupal_goto($path);
+}
+
+function thesite_entity_info_alter(&$entity_info) {
+  $entity_info['node']['view modes']['front'] = array(
+        'label' => t('front block'),
+        'custom settings' => TRUE,
+      );
+}
+
+function thesite_collpubimportfin() {
+  _coll_get_taxoncloud(true);
+}
+
+function thesite_wgblock() {
+  $items =
+    array(
+      'main_menu' => array(
+        'content_cb' => '_thesite_block_main_menu',
+      ),
+      'random_collection' => array(
+        'content_cb' => '_thesite_block_random_collection',
+      ),
+      'taxoncloud' => array(
+        'content_cb' => '_thesite_block_taxoncloud',
+      ),
+      'theuser' => array(
+        'content_cb' => '_thesite_block_theuser',
+      ),
+    );
+  return $items;
+}
+
+function thesite_form_user_profile_form_alter(&$form, &$form_state) {
+  $form['mimemail']['#access'] = false;
+}

@@ -1,0 +1,95 @@
+<?php
+define('COLL_FILE_BASE_SCHEMA', 'public://digicoll');
+
+require_once 'collpub.page.inc';
+require_once 'collpub.crud.inc';
+
+function collpub_menu() {
+  $items['icon/%'] =
+    array(
+      'title' => 'icon',
+      'description' => 'collection.',
+      'page callback' => '_collpub_icon',
+      'page arguments' => array(1),
+      'access arguments' => array('view collection'),
+    );
+  $items['search'] =
+    array(
+      'title' => 'collection',
+      'description' => 'collection.',
+      'page callback' => '_collpub_page',
+      'access arguments' => array('view collection'),
+    );
+  $items['admin/config/coll/public_crud'] =
+    array(
+      'title' => 'Collection Public Crud',
+      'description' => '',
+      'page callback' => '_collpub_crud_page',
+      'access arguments' => array('admin collection'),
+      'weight' => -5,
+    );
+  $items['admin/config/coll/settings'] =
+    array(
+      'title' => 'Collection Settings',
+      'description' => '',
+      'page callback' => '_collpub_misc_settings',
+      'access arguments' => array('admin collection'),
+      'weight' => -5,
+    );
+  return $items;
+}
+
+function collpub_node_view($node, $view_mode, $langcode) {
+  if($node->type != 'collection') return;
+  $identifier = (int)$node->field_identifier['und'][0]['value'];
+  $qs = DT::array_get($_GET, 'qs', '');
+  if(!$qs) $qs = DT::array_get($_GET, 'in', '');
+  $row = DT::array_get($_GET, 'row', 0);
+  if(property_exists($node, 'collopts')) {
+    $qs = DT::array_get($node->collopts, 'qs', $qs);
+    $row = DT::array_get($node->collopts, 'row', $row);
+  }
+  switch($view_mode) {
+    case 'full':
+      _coll_node_view_full($node, $qs, $row, $identifier);
+      _coll_node_view_rightgranted($node);
+      _coll_node_view_license($node);
+      break;
+    case 'teaser':
+    case 'grid':
+    case 'list':
+      $func = '_coll_node_view_'.$view_mode;
+      if(is_callable($func)) {
+        $func($node, $qs, $row, $identifier);
+      }
+      break;
+    case 'front':
+      $linkurl = _coll_url($identifier);
+      $node->linkurl = $linkurl;
+      $feature_image = _coll_get_feature_image($identifier, 'medium', $linkurl);
+      $node->feature_image = array('#markup' => $feature_image,);
+      break;
+    default:
+      $linkurl = _coll_url($identifier);
+      $feature_image = _coll_get_feature_image($identifier, 'thumbnail', $linkurl);
+      $node->feature_image = array('#markup' => $feature_image,);
+      break;
+  }
+}
+
+function _collpub_ef_variables() {
+  $vars = _coll_ef_variables();
+  $vars['node'][0]['field'][] = array('is-public' => true, 'name'=>'mediainfo', 'label'=> 'mediainfo',   'type'=>'longtext');
+  $ar = array();
+  foreach($vars['node'][0]['field'] as $f) {
+    if(array_key_exists('is-public', $f) && $f['is-public']) {
+      $ar[] = $f;
+    }
+  }
+  $vars['node'][0]['field'] = $ar;
+  unset($vars['path']['meta']);
+  unset($vars['path']['source']);
+  unset($vars['path']['archive']);
+  unset($vars['path']['export']);
+  return $vars;
+}

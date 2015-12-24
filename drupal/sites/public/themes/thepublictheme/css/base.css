@@ -1,0 +1,30 @@
+body {
+  color: #444;
+  font-family: sans-serif;
+  font-size: 15px;
+  line-height: 160%;
+  margin:0;
+  padding:0;
+}
+
+a.external{
+  color:Darkred ;
+  display: inline-block;
+  padding:0 15px 0 0;
+  background-color: transparent;
+  background-repeat: no-repeat;
+  background-position: right center;
+  background-image:  url('../images/external-link.png');
+}
+
+a.linktopage{
+  color:Darkred ;
+}
+
+a.infolink{
+  color:red
+}
+
+a.infolink:hover{
+  color:orange
+}

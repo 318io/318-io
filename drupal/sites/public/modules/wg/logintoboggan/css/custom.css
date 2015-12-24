@@ -1,0 +1,13 @@
+
+.password-help {
+  width: 200px;
+	float: right;
+}
+
+.form-type-password-confirm .control-label {
+	display: none;
+}
+
+.form-type-password .glyphicon {
+	height: auto;
+}

@@ -1,0 +1,951 @@
+<?php
+require_once('claim_coll.php');
+require_once('claim_author.php');
+require_once('node_hooks.php');
+
+
+/*
+ * register a new permission
+ */
+function collclaim_permission() {
+  return array(
+    'claim collection' => array(
+      'title' => t('Collection Claim'),
+      'description' => t('Claiming collection.'),
+    ),
+    'list claims' => array(
+      'title' => t('List all identified claims'),
+      'description' => t('List all identified claims.'),
+    )
+  );
+}
+
+function collclaim_menu() {
+  $items['admin/config/coll/email'] = array(
+    'title' => 'Claim notification receiver email address',
+    'description' => '設定有人認領藏品時，同時寄給管理員的收信地址。',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('_claim_notification_address'),
+    'access arguments' => array('access administration pages'),
+  );
+
+
+  $items['collection/identify/%'] = array(
+    'title' => 'Collection identification.',
+    'description' => 'Identify a collection.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('_collection_claim', 2),
+    //'access arguments' => array('claim collection'),
+    'access arguments' => array('access content'), // 2015.10.27, bug fix, 這邊應該要讓任意人都可以點選，否則 _collection_claim 不會被執行
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['identified_collections'] = array(
+    'title' => 'Identified collections.',
+    'description' => 'list all identified collections.',
+    'page callback' => '_claimed_collections',
+    'access arguments' => array('list claims'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['user_identified_collections'] = array(
+    'title' => 'User identified collections.',
+    'description' => 'list all identified collections of an user.',
+    'page callback' => '_user_claimed_collections',
+    'access arguments' => array('claim collection'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['identification_resend/%'] = array(
+    'title' => 'Resend PDF',
+    'description' => 'Resend PDF forms of a identification.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('_claim_resend_form', 1),
+    'access arguments' => array('claim collection'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+
+function _claim_notification_address($form, &$form_state) {
+  $form['notify_email'] = array(
+    '#type' => 'textfield',
+    '#title' => t('Email'),
+    '#default_value' => variable_get('claim_notification_address', ''),
+    '#size' => 60,
+    '#maxlength' => 128,
+    '#required' => FALSE,
+  );
+
+  $form['submit'] = array(
+      '#type' => 'submit',
+      '#value' => t('設定'),
+  );
+
+  /* reference : https://www.drupal.org/node/133861 */
+  $form['cancel'] = array(
+      '#type' => 'button',
+      '#value' => t('取消'),
+      '#prefix' => '&nbsp;',
+      '#attributes' => array('onClick' => 'history.go(-1); return true;'),
+      '#post_render' => array('change_button_type'),
+  );
+  return $form;
+}
+
+function _claim_notification_address_submit($form , &$form_state) {
+  $email = $form_state['values']['notify_email'];
+  variable_set('claim_notification_address', $email);
+  if(!empty(trim($email))) drupal_set_message('Notification email will be sent to ' . $email . '.');
+  else                     drupal_set_message('Notification email will not be sent.');
+}
+
+function _claim_resend_form($form, &$form_state, $claim_id) {
+  global $user;
+  $claim = get_raw_claim_by_id($claim_id);
+
+  $copyright_db = array(
+    0 => t('CC0 1.0 公眾領域貢獻宣告 (Public Domain Dedication)'),
+    1 => t('創用 CC 「姓名標示 3.0 台灣」授權條款及其後版本 (CC BY 3.0 TW and later)'),
+    2 => t('創用 CC 「姓名標示-相同方式分享 3.0 台灣」授權條款及其後版本 (CC BY-SA 3.0 TW and later)'),
+    3 => t('創創用 CC 「姓名標示-非商業性 3.0 台灣」授權條款及其後版本 (CC BY-NC 3.0 TW and later)'),
+    4 => t('創用 CC 「姓名標示-禁止改作 3.0 台灣」授權條款及其後版本 (CC BY-ND 3.0 TW and later)'),
+    5 => t('創用 CC 「姓名標示-非商業性-相同方式分享 3.0 台灣」授權條款及其後版本 (CC BY-NC-SA 3.0 TW and later)'),
+    6 => t('創用 CC 「姓名標示-非商業性-禁止改作 3.0 台灣」授權條款及其後版本 (CC BY-NC-ND 3.0 TW and later)'),
+    7 => t('本藏品僅供他人在合理使用範圍內使用 (Fair Use)')
+  );
+
+  if(!empty($claim) && $claim['uid'] == $user->uid) {
+
+    $header = array('Collection ID', 'Copyright', 'Attribution', 'Note', 'Date');
+
+    $copyright = $copyright_db[intval($claim['copyright'])];
+
+    $rows[] = array(l($claim['cid'], $claim['cid']), $copyright, $claim['display'], $claim['note'], format_date($claim['created']));
+    $table = theme('table', array('header' => $header, 'rows' => $rows));
+
+    $form['claim'] = array(
+      '#type' => 'item',
+      '#title' => t('你確定要重寄嗎 ?'),
+      '#markup' => $table
+    );
+
+    $form['claim_id'] = array(
+      '#type' => 'hidden',
+      '#value' => $claim_id
+    );
+
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('重寄'),
+    );
+
+    /* reference : https://www.drupal.org/node/133861 */
+    $form['cancel'] = array(
+        '#type' => 'button',
+        '#value' => t('取消'),
+        '#prefix' => '&nbsp;',
+        '#attributes' => array('onClick' => 'history.go(-1); return true;'),
+        '#post_render' => array('change_button_type'),
+    );
+    return $form;
+
+  } else {
+    drupal_set_message("_claim_resend_form($claim_id): no such claim or not claim for current user.");
+    drupal_goto('user_identified_collections');
+  }
+}
+
+function _claim_resend_form_submit($form , &$form_state) {
+  $claim_id = $form_state['values']['claim_id'];
+
+  $claim = get_claim_by_id($claim_id);
+  $pdfs = _generate_pdf($claim_id);
+
+  if(empty($pdfs)) {
+    drupal_set_message("Cannot generate PDFs for Claim: $claim_id");
+    drupal_goto('/');
+  }
+
+  $tmp_pdf_en = $pdfs['en'][0];
+  $tmp_pdf_tw = $pdfs['tw'][0];
+  $en_letter_name = $pdfs['en'][1];
+  $tw_letter_name = $pdfs['tw'][1];
+
+  $login_name = $claim['login_name'];
+  $real_name  = $claim['real_name'];
+  $collection_id = $claim['cid'];
+
+  $params = array(
+    'username' => $login_name . " (" . $real_name . ")",
+    'collection_id' => $collection_id,
+    'host' => variable_get('site_name'),
+    'attachment_en' => array('filepath' => $tmp_pdf_en, 'filename' => $en_letter_name),
+    'attachment_tw' => array('filepath' => $tmp_pdf_tw, 'filename' => $tw_letter_name)
+  );
+
+  $email = $claim['email'];
+  $message = drupal_mail('collclaim', 'claim_mail', $email,  language_default(), $params, $from = NULL, $send = TRUE);
+
+  if($message['result']) {
+    drupal_set_message("已經將指認回函寄至您的 email 信箱( $email ) 。");
+    drupal_goto("/");
+  }
+}
+
+
+function _claimed_collections() {
+
+  $claims = _collclaim_get_all_verified_claims();
+
+  $table = "<p>尚無已確認的指認。</p>";
+
+  if(!empty($claims)) {
+    $header = array('Identification ID', 'Collection ID', 'Attribution', 'Date', 'Mosaic');
+
+
+    foreach($claims as $claim) {
+
+      $openmosaic = (intval($claim['openmosaic']) == 1) ? '開放' : '不開放';
+
+      $rows[] = array(
+        $claim['id'],
+        l($claim['cid'], $claim['cid']),
+        $claim['display'],
+        format_date($claim['created']),
+        $openmosaic
+      );
+    }
+
+    $num = count($claims);
+
+    $table = "<p>目前共 " . $num . " 筆指認。</p>";
+
+    $table .= theme('table', array('header' => $header, 'rows' => $rows));
+  }
+
+  return $table;
+}
+
+
+function _user_claimed_collections() {
+  global $user;
+
+  //drupal_set_message($user->uid);
+
+  $claims = _collclaim_get_claims_of_an_author($user->uid);
+
+  $table = "<p>查無任何指認記錄。</p>";
+
+  if(!empty($claims)) {
+    $header = array('Identification ID', 'Collection ID', 'Note', 'Date', 'Mosaic', 'Action');
+
+    $rows = array();
+    foreach($claims as $claim) {
+      $claim_id = $claim['id'];
+
+      $openmosaic = intval($claim['openmosaic']) == 1 ? '開放' : '不開放';
+
+      $rows[] = array(
+        $claim_id,
+        //$claim['cid'],
+        l($claim['cid'], $claim['cid']),
+        $claim['note'],
+        format_date($claim['created']),
+        $openmosaic,
+        l('重寄指認表單', "identification_resend/$claim_id")
+      );
+    }
+
+    $table = theme('table', array('header' => $header, 'rows' => $rows));
+  }
+
+  return $table;
+}
+
+
+function change_button_type($markup, $element) {
+  $markup = str_replace('type="submit', 'type="button', $markup);
+  return $markup;
+}
+
+function _collection_claim($form, &$form_state, $collection_id) {
+
+  if(user_is_anonymous()) {
+    $_SESSION['claim_before_login'] = $collection_id;
+    drupal_goto('toboggan/denied');
+    //drupal_access_denied();
+    //return MENU_ACCESS_DENIED;
+  }
+
+  $p = drupal_get_path('module', 'collclaim');
+
+
+  drupal_add_js("$p/js/hide_statement.js");
+  drupal_add_css("$p/css/collclaim.css"); // fix the radio box styling problem.
+
+  $statement =<<<STAT
+  <h4>一、聲明同意事項</h4>
+  <ol type="i">
+    <li><p>僅以下列表格之填寫、列印、親筆簽名及書面交寄之流程，向 318 公民運動文物紀錄典藏庫(以下稱典藏庫)聲明收錄藏品之權利狀態，以利典藏庫於藏品展示時為本人標註適當之顯名聲明。此外，典藏庫並得就本聲明書內之指定藏品，依本人所選定之公眾授權及宣告方式，釋出高解析度之數位重製品，提供公眾使用。</p>
+    </li>
+    <li><p>透過表格資訊之填寫，代表本人明確知悉並同意，若以己名或冒名聲明非本人創作之藏品及其權利，須自負法律責任，且不得將相關責任以任何理由歸諸於典藏庫或其他相信此權利聲明資訊之善意第三人。</p>
+    </li>
+    <li><p>本人同意典藏庫於收受藏品著作權利聲明及同意書後，可對本人聲明擁有著作權利之藏品，進行下列彈性權宜處置：</p>
+       <ol type="1">
+          <li><p>就本人選定為對公眾授權之藏品，典藏庫得依資源負載以及風險評估之規劃，自主決定是否以高解析度之數位重製品為該藏品進行釋出。</p>
+          </li>
+          <li><p>典藏庫僅對本聲明權利流程進行步驟控管，並不對聲明資訊作實質審驗。當個別藏品有不同權利主體進行複式聲明時，典藏庫或將以揭露併存的方式處理；倘若個別聲明人對其主張藏品權利狀態有釐清之需求，典藏庫當徵詢相關人並獲其聯絡資訊披露之同意後，橋接雙方、多方聲明人自行對權利狀態進行協商處理。</p>
+          </li>
+          <li><p>本人聲明之藏品或可能因為涉及個人資料或其他因素，以致部份影像內容已被遮蔽。本人同意典藏庫目前的處理方式，以及後續的任何處理方式，如回復被遮蔽的內容，或維持、新增遮蔽處理。</p>
+          </li>
+       </ol>
+    </li>
+  </ol>
+  <h4>二、著作品資訊及其權利聲明與授權行使</h4>
+  <p>本人聲明以下藏品為本人所創作，擁有著作權利並同意行使以下授權及宣告方式。對採行公眾授權方式或公眾領域貢獻宣告的創作，本人並同意典藏庫得釋出高解析度之數位重製品，提供公眾使用：</p>
+STAT;
+
+  if(!empty($collection_id)) {
+
+    if(has_verified_claims_of_a_collection($collection_id)) {
+
+      $form['warn1'] = array(
+        '#type' => 'item',
+        '#title' => t('重複的指認'),
+        '#markup' => '<p style="color:red;">此藏品已被指認，請再一次確認此藏品是否真為自己創作，若是，請繼續下面步驟。</p>'
+      );
+    }
+
+    $form['desc1'] = array(
+      '#type' => 'item',
+      '#title' => t(''),
+      '#markup' => $statement
+    );
+
+    $form['display_collection_id'] = array(
+      '#type' => 'item',
+      '#title' => t('藏品編號'),
+      '#markup' => "<p>$collection_id</p>"
+    );
+    $form['collection_id'] = array(
+      '#type' => 'hidden',
+      '#value' => $collection_id
+    );
+
+    $form['display_name'] = array(
+      '#type' => 'textfield',
+      '#title' => t('自訂姓名標示 (若留白，典藏庫將以聲明人本名作為姓名標示)'),
+      '#size' => 60,
+      '#maxlength' => 128,
+    );
+
+    $form['copyright'] = array(
+      '#type' => 'radios',
+      '#title' => t('選定聲明藏品授權模式'),
+      '#option_suffixs' => array(
+        0 => t('<div id="stat0" class="statement" style="display:none;"><p>@rule1</p><p>@rule2</p><p>@rule3</p></div>', array(
+               '@rule1' => t('(一) 本人同意拋棄該著作依著作權法所享有之權利，包括所有相關與鄰接的法律權利，並宣告將該著作貢獻至公眾領域。'),
+               '@rule2' => t('(二) 使用人可以複製、修改、發布或展示此作品，亦可進行商業利用，完全不需要經過許可。'),
+               '@rule3' => t('(三) 由本典藏庫代為標示貢獻宣告標章。'),
+             )),
+        1 => t('<div id="stat1" class="statement" style="display:none;"><p>@rule1</p><p>@rule2</p></div>', array(
+               '@rule1' => t('(一) 本人同意採用 創用CC 「姓名標示 3.0台灣」及其後版本 (CC BY 3.0 TW and later) 授權條款，將其可受著作權利保護的部分授權予公眾。使用人不論任何目的、是否作為商業用途，皆可自由分享或修改本作品數位複本與其相關資料，但須以適當合理的方式表彰甲方指定的姓名標示。'),
+               '@rule2' => t('(二) 由本典藏庫代為標示授權條款標章。'),
+             )),
+        2 => t('<div id="stat2" class="statement" style="display:none;"><p>@rule1</p><p>@rule2</p><p>@rule3</p></div>', array(
+               '@rule1' => t('(一) 本人同意採用 創用CC 「姓名標示-相同方式分享 3.0台灣 」及其後版本 (CC BY-SA 3.0 TW and later) 授權條款，將其可受著作權利保護的部分授權予公眾。使用人不論任何目的、是否作為商業用途，皆可自由分享或修改、重製本作品數位複本與其相關資料，但須以適當合理的方式表彰甲方指定的姓名標示。'),
+               '@rule2' => t('(二) 使用人以任何方式修改、重製本作品後，必須同樣採用 創用CC「姓名標示-相同方式分享 3.0台灣」 (CC BY-SA 3.0 TW ) 授權條款釋出其衍生作品的部分權利供大眾使用。'),
+               '@rule3' => t('(三) 由本典藏庫代為標示授權條款標章。')
+             )),
+        3 => t('<div id="stat3" class="statement" style="display:none;"><p>@rule1</p><p>@rule2</p></div>', array(
+               '@rule1' => t('(一) 本人同意採用 創用CC「姓名標示-非商業性 3.0台灣」及其後版本 (CC BY-NC 3.0 TW and later) 授權條款，將其可受著作權利保護的部分授權予公眾。使用人可自由分享或修改本作品數位複本與其相關資料，但不得為商業目的而使用，且須以適當合理的方式表彰甲方指定的姓名標示。'),
+               '@rule2' => t('(二) 由本典藏庫代為標示授權條款標章。'),
+             )),
+        4 => t('<div id="stat4" class="statement" style="display:none;"><p>@rule1</p><p>@rule2</p></div>', array(
+               '@rule1' => t('(一) 本人同意採用 創用CC「姓名標示-禁止改作 3.0台灣」及其後版本 (CC BY-ND 3.0 TW and later) 授權條款，將其可受著作權利保護的部分授權予公眾。使用人不論任何目的、是否作為商業用途，皆可自由分享本作品數位複本與其相關資料;但不得對本作品進行修改、重製，並須以適當合理的方式表彰甲方指定的姓名標示。'),
+               '@rule2' => t('(二) 由本典藏庫代為標示授權條款標章。'),
+             )),
+        5 => t('<div id="stat5" class="statement" style="display:none;"><p>@rule1</p><p>@rule2</p><p>@rule3</p></div>', array(
+               '@rule1' => t('(一) 本人同意採用 創用CC「姓名標示-非商業性-相同方式分享 3.0台灣」及其後版本 (CC BY-NC-SA 3.0 TW and later) 授權條款,將其可受著作權利保護的部分授權予公眾,任何人皆可自由分享或修改、重製本作品數位複本與其相關資料,但不得為商業目的而使用,並須以適當合理的方式表彰甲方指定的姓名標示。'),
+               '@rule2' => t('(二) 使用人以任何方式修改本作品後,必須同樣採用 創用CC「姓名標示-非商業性-相同方式分享 3.0台灣」(CC BY-NC-SA 3.0 TW) 授權條款釋出其衍生作品的部分權利供大眾使用。'),
+               '@rule3' => t('(三) 由本典藏庫代為標示授權條款標章。')
+             )),
+        6 => t('<div id="stat6" class="statement" style="display:none;"><p>@rule1</p><p>@rule2</p></div>', array(
+               '@rule1' => t('(一) 本人同意採用 創用CC「姓名標示-非商業性-禁止改作 3.0台灣」及其後版本 (CC BY-NC-ND 3.0 TW and later) 授權條款，將其可受著作權利保護的部分授權予公眾。使用人僅可自由分享本作品數位複本與其相關資料，不得對本作品進行修改、重製，亦不得為商業性目的使用，並須以適當合理的方式表彰甲方指定的姓名標示。'),
+               '@rule2' => t('(二) 由本典藏庫代為標示授權條款標章。'),
+             )),
+        7 => t('<div id="stat7" class="statement" style="display:none;"><p>@rule1</p><p>@rule2</p></div>', array(
+               '@rule1' => t('(一) 使用人在符合社會公共利益的情況下，能不經著作權人同意，即合法利用其著作。'),
+               '@rule2' => t('(二) 由本典藏庫代為標示合理使用之明示宣告。'),
+             )),
+      ),
+      '#options' => array(
+        0 => t('<a id="radio0">CC0 1.0 公眾領域貢獻宣告 (Public Domain Dedication)</a>'),
+        1 => t('<a id="radio1">創用 CC 「姓名標示 3.0 台灣」授權條款及其後版本 (CC BY 3.0 TW and later)</a>'),
+        2 => t('<a id="radio2">創用 CC 「姓名標示-相同方式分享 3.0 台灣」授權條款及其後版本 (CC BY-SA 3.0 TW and later)</a>'),
+        3 => t('<a id="radio3">創用 CC 「姓名標示-非商業性 3.0 台灣」授權條款及其後版本 (CC BY-NC 3.0 TW and later)</a>'),
+        4 => t('<a id="radio4">創用 CC 「姓名標示-禁止改作 3.0 台灣」授權條款及其後版本 (CC BY-ND 3.0 TW and later)</a>'),
+        5 => t('<a id="radio5">創用 CC 「姓名標示-非商業性-相同方式分享 3.0 台灣」授權條款及其後版本 (CC BY-NC-SA 3.0 TW and later)</a>'),
+        6 => t('<a id="radio6">創用 CC 「姓名標示-非商業性-禁止改作 3.0 台灣」授權條款及其後版本 (CC BY-NC-ND 3.0 TW and later)</a>'),
+        7 => t('<a id="radio7">本藏品僅供他人在合理使用範圍內使用 (Fair Use)</a>'),
+      ),
+      '#default_value' => 0,
+      '#description' => t('若您不了解創用 CC 授權，您可以利用<a href="@url" target="_blank">CC 授權小幫手</a>來選擇合適的授權方案。', array('@url' => 'http://creativecommons.org/choose/')),
+    );
+
+    $form['note'] = array(
+      '#type' => 'textarea',
+      '#title' => t('給管理員的話 (Note)'),
+    );
+
+    $form['openmosaic'] = array(
+      '#type' => 'checkbox',
+      '#title' => t('本藏品部份影像內容已被遮蔽，請回復被遮蔽的內容。'),
+      '#return_value' => 1,
+      '#default_value' => 0,
+      '#description' => '本典藏庫之藏品或可能因為涉及個人資料或其他因素，以致部份影像內容已被遮蔽。我同意本典藏庫 目前的處理方式，以及後續的任何處理方式，如回復被遮蔽的內容，或維持、新增遮蔽處理。'
+    );
+
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('確認'),
+    );
+
+    /* reference : https://www.drupal.org/node/133861 */
+    $form['cancel'] = array(
+        '#type' => 'button',
+        '#value' => t('取消'),
+        '#prefix' => '&nbsp;',
+        '#attributes' => array('onClick' => 'history.go(-1); return true;'),
+        '#post_render' => array('change_button_type'),
+    );
+    return $form;
+  } else {
+    drupal_goto('/');
+  }
+}
+
+/*
+  0 => t('<a id="radio0">CC0 1.0 公眾領域貢獻宣告 (Public Domain Dedication)</a>'),
+  1 => t('<a id="radio1">創用 CC 「姓名標示 3.0 台灣」授權條款及其後版本 (CC BY 3.0 TW and later)</a>'),
+  2 => t('<a id="radio2">創用 CC 「姓名標示-相同方式分享 3.0 台灣」授權條款及其後版本 (CC BY-SA 3.0 TW and later)</a>'),
+  3 => t('<a id="radio3">創用 CC 「姓名標示-非商業性 3.0 台灣」授權條款及其後版本 (CC BY-NC 3.0 TW and later)</a>'),
+  4 => t('<a id="radio4">創用 CC 「姓名標示-禁止改作 3.0 台灣」授權條款及其後版本 (CC BY-ND 3.0 TW and later)</a>'),
+  5 => t('<a id="radio5">創用 CC 「姓名標示-非商業性-相同方式分享 3.0 台灣」授權條款及其後版本 (CC BY-NC-SA 3.0 TW and later)</a>'),
+  6 => t('<a id="radio6">創用 CC 「姓名標示-非商業性-禁止改作 3.0 台灣」授權條款及其後版本 (CC BY-NC-ND 3.0 TW and later)</a>'),
+  7 => t('<a id="radio7">本藏品僅供他人在合理使用範圍內使用 (Fair Use)</a>'),
+
+  cc0 1.0|https://creativecommons.org/publicdomain/zero/1.0/deed.zh_TW
+  cc by 3.0 tw|https://creativecommons.org/licenses/by/3.0/tw/
+  cc by-sa 3.0 tw|https://creativecommons.org/licenses/by-sa/3.0/tw/
+  cc by-nc 3.0  tw|https://creativecommons.org/licenses/by-nc/3.0/tw/
+  cc by-nd 3.0 tw|https://creativecommons.org/licenses/by-nd/3.0/tw/
+  cc by-nc-sa 3.0 tw|https://creativecommons.org/licenses/by-nc-sa/3.0/tw/
+  cc by-nc-nd 3.0 tw|https://creativecommons.org/licenses/by-nc-nd/3.0/tw/
+*/
+
+function _generate_pdf($claim_id) {
+
+  $copyright_db = array(
+    0 => t('CC0 1.0 公眾領域貢獻宣告 (Public Domain Dedication)'),
+    1 => t('創用 CC 「姓名標示 3.0 台灣」授權條款及其後版本 (CC BY 3.0 TW and later)'),
+    2 => t('創用 CC 「姓名標示-相同方式分享 3.0 台灣」授權條款及其後版本 (CC BY-SA 3.0 TW and later)'),
+    3 => t('創創用 CC 「姓名標示-非商業性 3.0 台灣」授權條款及其後版本 (CC BY-NC 3.0 TW and later)'),
+    4 => t('創用 CC 「姓名標示-禁止改作 3.0 台灣」授權條款及其後版本 (CC BY-ND 3.0 TW and later)'),
+    5 => t('創用 CC 「姓名標示-非商業性-相同方式分享 3.0 台灣」授權條款及其後版本 (CC BY-NC-SA 3.0 TW and later)'),
+    6 => t('創用 CC 「姓名標示-非商業性-禁止改作 3.0 台灣」授權條款及其後版本 (CC BY-NC-ND 3.0 TW and later)'),
+    7 => t('本藏品僅供他人在合理使用範圍內使用 (Fair Use)')
+  );
+
+  $claim = get_claim_by_id($claim_id);
+
+  if(empty($claim)) {
+    drupal_set_message('_generate_pdf(): empty claim.');
+    return array(); // empty array returned on error.
+  }
+
+  $login_name    = $claim['login_name']; //https://api.drupal.org/api/drupal/developer!globals.php/global/user/7
+  $collection_id = $claim['cid'];
+  $display_name  = $claim['display'];
+  $copyright_op  = $claim['copyright'];
+  $copyright     = $copyright_db[intval($copyright_op)];
+  $note          = $claim['note'];
+  $email         = $claim['email'];
+  $phone         = $claim['phone'];
+  $address       = $claim['address'];
+  $real_name     = $claim['real_name'];
+  $four_digitid  = $claim['4digitid'];
+  $hd            = $claim['hd'];
+  $openmosaic    = $claim['openmosaic'];
+
+  $md_path  = drupal_get_path('module', 'collclaim');
+  $tmp_path = sys_get_temp_dir();
+
+  //------
+  if (!copy("$md_path/letter.css", "$tmp_path/letter.css")) {
+      drupal_set_message("failed to copy letter.css");
+  }
+  if (!copy("$md_path/en.jpg", "$tmp_path/en.jpg")) {
+      drupal_set_message("failed to copy en.jpg");
+  }
+  if (!copy("$md_path/tw.jpg", "$tmp_path/tw.jpg")) {
+      drupal_set_message("failed to copy tw.jpg");
+  }
+
+  $tmpfname_en = tempnam($tmp_path, "CLAIM") . ".html";
+  $tmp_pdf_en  = tempnam($tmp_path, "CLAIM") . ".pdf";
+
+  $tmpfname_tw = tempnam($tmp_path, "CLAIM") . ".html";
+  $tmp_pdf_tw  = tempnam($tmp_path, "CLAIM") . ".pdf";
+  //$pdfname  = $md_path ."/files/". $collection_id . "_" . $uid . ".pdf";
+
+  $en_letter_name = $collection_id . "_" . $uid . "_abroad.pdf";
+  $tw_letter_name = $collection_id . "_" . $uid . "_taiwan.pdf";
+
+  //drupal_set_message($pdfname);
+
+  $tw_envelop = <<<TW_ENVELOP
+  <div id='envelop'>
+    <img src='tw.jpg' id='background'/>
+  </div>
+TW_ENVELOP;
+
+  $en_envelop = <<<EN_ENVELOP
+  <div id='envelop'>
+    <img src='en.jpg' id='background'/>
+  </div>
+EN_ENVELOP;
+
+  $statement = <<<STATEMENT
+  <div id='claim_id'>$claim_id</div>
+  <div id="statement">
+    <h2>318 公民運動文物紀錄典藏庫</h2>
+    <h2>藏品著作權利聲明及同意書</h2>
+
+    <ol type="I">
+      <li><h3>聲明及同意事項</h3>
+        <ol type="i">
+          <li><p>僅以下列表格之填寫、列印、親筆簽名及書面交寄之流程，向 318 公民運動文物紀錄典藏庫(以下稱典藏庫)聲明收錄藏品之權利狀態，以利典藏庫於藏品展示時為本人標註適當之顯名聲明。此外，典藏庫並得就本聲明書內之指定藏品，依本人所選定之公眾授權及宣告方式，釋出高解析度之數位重製品，提供公眾使用。</p>
+          </li>
+          <li><p>透過表格資訊之填寫，代表本人明確知悉並同意，若以己名或冒名聲明非本人創作之藏品及其權利，須自負法律責任，且不得將相關責任以任何理由歸諸於典藏庫或其他相信此權利聲明資訊之善意第三人。</p>
+          </li>
+          <li><p>本人同意典藏庫於收受藏品著作權利聲明及同意書後，可對本人聲明擁有著作權利之藏品，進行下列彈性權宜處置：</p>
+             <ol type="1">
+                <li><p>就本人選定為對公眾授權之藏品，典藏庫得依資源負載以及風險評估之規劃，自主決定是否以高解析度之數位重製品為該藏品進行釋出。</p>
+                </li>
+                <li><p>典藏庫僅對本聲明權利流程進行步驟控管，並不對聲明資訊作實質審驗。當個別藏品有不同權利主體進行複式聲明時，典藏庫或將以揭露併存的方式處理；倘若個別聲明人對其主張藏品權利狀態有釐清之需求，典藏庫當徵詢相關人並獲其聯絡資訊披露之同意後，橋接雙方、多方聲明人自行對權利狀態進行協商處理。</p>
+                </li>
+                <li><p>本人聲明之藏品或可能因為涉及個人資料或其他因素，以致部份影像內容已被遮蔽。本人同意典藏庫目前的處理方式，以及後續的任何處理方式，如回復被遮蔽的內容，或維持、新增遮蔽處理。</p>
+                </li>
+             </ol>
+          </li>
+        </ol>
+      </li>
+      <li> <h3>著作品資訊及其權利聲明與授權行使</h3>
+        <p>本人聲明以下藏品為本人所創作，擁有著作權利並同意行使以下授權及宣告方式。對採行公眾授權方式或公眾領域貢獻宣告的創作，本人並同意典藏庫得釋出高解析度之數位重製品，提供公眾使用（* 必填資訊）：
+        </p>
+        <ol type="i">
+          <li>
+             藏品識別號： $collection_id
+          </li>
+          <li>
+             聲明人本名*： $real_name
+          </li>
+          <li>
+             自訂姓名標示方式（於展示該藏品時標示使用）： $display_name
+          </li>
+          <li>
+             對該聲明藏品所行使的授權方式*： $copyright
+          </li>
+          <li>
+             身分證字號後四碼： $four_digitid
+          </li>
+          <li>
+             連絡電話： $phone
+          </li>
+          <li>
+             電子郵件*： $email
+          </li>
+          <li>
+             通訊地址*： $address
+          </li>
+        </ol>
+        <p>除姓名標示外，以上個人資料僅為身分識別及供典藏庫洽簽署人確認資訊之用，不對外揭露。</p>
+      </li>
+      <li><h3>簽章及具結</h3>
+          <p>僅以下列親筆署名或蓋章，表達本聲明及同意書所填寫之資料係為真實。</p>
+          <p>&#160;</p>
+          <p>立聲明及同意書人：<span class="name to_fill">&#160;</span>&#160;(親筆簽名/蓋章)</p>
+          <p>日期：公元&#160;<span class="year to_fill">&#160;</span>&#160;年&#160;<span class="month to_fill">&#160;</span>&#160;月&#160;<span class="day to_fill">&#160;</span>&#160;日
+      </li>
+    </ol>
+  </div>
+STATEMENT;
+
+  $tw_letter = <<<ZH_LETTER
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>318 公民運動藏品指認回函</title>
+  <link rel="stylesheet" href="letter.css">
+</head>
+<body>
+<div id='main'>
+  $tw_envelop
+  $statement
+</div>
+</body>
+</html>
+ZH_LETTER;
+
+  $en_letter = <<< EN_LETTER
+<!DOCTYPE html>
+<html>
+<head>
+  <meta charset="UTF-8">
+  <title>318 公民運動藏品指認回函</title>
+  <link rel="stylesheet" href="letter.css">
+</head>
+<body>
+<div id='main'>
+  $en_envelop
+  $statement
+</div>
+</body>
+</html>
+EN_LETTER;
+
+  file_put_contents($tmpfname_tw, $tw_letter);
+  file_put_contents($tmpfname_en, $en_letter);
+
+  //drupal_set_message("/usr/local/bin/wkhtmltopdf $tmpfname $pdfname");
+
+  exec("/usr/local/bin/wkhtmltopdf -s A4 -B 0 -L 0 -R 0 -T 0 $tmpfname_tw $tmp_pdf_tw", $output_tw); // check error
+  exec("/usr/local/bin/wkhtmltopdf -s A4 -B 0 -L 0 -R 0 -T 0 $tmpfname_en $tmp_pdf_en", $output_en); // check error
+
+  return array(
+    'en' => array($tmp_pdf_en, $en_letter_name),
+    'tw' => array($tmp_pdf_tw, $tw_letter_name)
+  );
+}
+
+
+function _collection_claim_submit($form , &$form_state) {
+  global $user;
+
+  $copyright_db = array(
+    0 => t('CC0 1.0 公眾領域貢獻宣告 (Public Domain Dedication)'),
+    1 => t('創用 CC 「姓名標示 3.0 台灣」授權條款及其後版本 (CC BY 3.0 TW and later)'),
+    2 => t('創用 CC 「姓名標示-相同方式分享 3.0 台灣」授權條款及其後版本 (CC BY-SA 3.0 TW and later)'),
+    3 => t('創創用 CC 「姓名標示-非商業性 3.0 台灣」授權條款及其後版本 (CC BY-NC 3.0 TW and later)'),
+    4 => t('創用 CC 「姓名標示-禁止改作 3.0 台灣」授權條款及其後版本 (CC BY-ND 3.0 TW and later)'),
+    5 => t('創用 CC 「姓名標示-非商業性-相同方式分享 3.0 台灣」授權條款及其後版本 (CC BY-NC-SA 3.0 TW and later)'),
+    6 => t('創用 CC 「姓名標示-非商業性-禁止改作 3.0 台灣」授權條款及其後版本 (CC BY-NC-ND 3.0 TW and later)'),
+    7 => t('本藏品僅供他人在合理使用範圍內使用 (Fair Use)')
+  );
+
+  $uid           = $user->uid;
+  $login_name    = $user->name; //https://api.drupal.org/api/drupal/developer!globals.php/global/user/7
+  $collection_id = $form_state['values']['collection_id'];
+  $display_name  = $form_state['values']['display_name'];
+  $copyright_op  = $form_state['values']['copyright'];
+  $copyright     = $copyright_db[intval($copyright_op)];
+  $note          = $form_state['values']['note'];
+  $openmosaic    = $form_state['values']['openmosaic'];
+
+  $author = _collclaim_get_author($uid);
+
+  $email        = $author['email'];
+  $phone        = $author['phone'];
+  $address      = $author['address'];
+  $real_name    = $author['real_name'];
+  $four_digitid = $author['4digitid'];
+
+  //drupal_set_message($form_state['values']['display_name']);
+  //drupal_set_message($form_state['values']['copyright']);
+  //drupal_set_message($form_state['values']['high_resolution']);
+  //drupal_set_message($form_state['values']['collection_id']);
+  //drupal_set_message($uid);
+  //drupal_set_message($login_name);
+
+  //$hd            = $form_state['values']['high_resolution'];
+  $hd = 1;
+  if($copyright_op == 8) $hd = 0; // fair use
+
+  if(!empty($collection_id)) {
+
+    $md_path  = drupal_get_path('module', 'collclaim');
+    $tmp_path = sys_get_temp_dir();
+
+    $claim_id = _collclaim_add_claim($uid, $collection_id, $hd, $copyright_op, $display_name, $note, $openmosaic); // write the claim to DB
+
+    if($claim_id == 0) drupal_goto("/$collection_id"); // add fail, go back to that collection
+
+    $pdfs = _generate_pdf($claim_id);
+
+    if(empty($pdfs)) {
+      drupal_set_message("Cannot generate PDFs for Identification: $claim_id");
+      drupal_goto($collection_id);
+    }
+
+    $tmp_pdf_en = $pdfs['en'][0];
+    $tmp_pdf_tw = $pdfs['tw'][0];
+    $en_letter_name = $pdfs['en'][1];
+    $tw_letter_name = $pdfs['tw'][1];
+
+    $params = array(
+      'username' => $login_name . " (" . $author['real_name'] . ")",
+      'collection_id' => $collection_id,
+      'host' => variable_get('site_name'),
+      'attachment_en' => array('filepath' => $tmp_pdf_en, 'filename' => $en_letter_name, 'filemime' => ' application/pdf'),
+      'attachment_tw' => array('filepath' => $tmp_pdf_tw, 'filename' => $tw_letter_name, 'filemime' => ' application/pdf')
+    );
+
+    $admin_params = array(
+      'claim_id'       => $claim_id,
+      'collection_id'  => $collection_id,
+      'real_name'      => $real_name,
+      'email'          => $email,
+      'address'        => $address,
+      'phone'          => $phone,
+      'four_digitid'   => $four_digitid,
+      'note'           => $note,
+      'attachment_en'  => array('filepath' => $tmp_pdf_en, 'filename' => $en_letter_name, 'filemime' => ' application/pdf'),
+      'attachment_tw'  => array('filepath' => $tmp_pdf_tw, 'filename' => $tw_letter_name, 'filemime' => ' application/pdf')
+    );
+
+    //dbug_message($admin_params);
+
+    $message = drupal_mail('collclaim', 'claim_mail', $author['email'],  language_default(), $params, $from = NULL, $send = TRUE);
+
+    $adm_email = variable_get('claim_notification_address', '');
+
+    // 318workinggroup@gmail.com, 請到 http://loc.public.318.io/admin/config/claim/email 設定
+    if(!empty($adm_email)) {
+      drupal_mail('collclaim', 'admin_mail', $adm_email, language_default(), $admin_params, $from = NULL, $send = TRUE);
+    }
+
+    if($message['result']) {
+      drupal_set_message("您已完成識別碼 $collection_id 的線上指認與授權作業，請至您的信箱($email)列印著作權聲明信。");
+      drupal_goto("/$collection_id");
+    }
+
+  } else {
+    //drupal_set_message('Please specify a collection to claim.');
+    drupal_set_message('請指定一個欲指認的藏品識別碼。');
+  }
+
+
+}
+
+/*
+ * reference
+ *   http://drupal.stackexchange.com/questions/6677/how-to-programmatically-send-an-email
+ *   https://api.drupal.org/api/drupal/includes!mail.inc/function/drupal_mail/7
+ *   http://drupal.stackexchange.com/questions/101035/send-attachments-with-drupal-mail
+ *   https://www.drupal.org/node/1200142
+ */
+function collclaim_mail($key, &$message, $params) {
+
+  switch($key) {
+    case 'claim_mail':
+
+      $message['headers'] = array(
+        'MIME-Version' => '1.0',
+        'Content-Type' => 'text/html; charset=UTF-8; format=flowed',
+        'Content-Transfer-Encoding' => '8Bit',
+        'X-Mailer' => 'Drupal'
+      );
+
+      $message['subject'] = t('[ @collection_id ] 線上指認與授權流程－列印並寄回藏品著作權聲明書', array('@collection_id' => $params['collection_id']));
+      //$message['subject'] = t('public.318.io collection @collection_id 指認回函 (Claim Form)', array('@collection_id' => $params['collection_id']));
+      $message['body'][] = t('<p>你好 @username,</p>', array('@username' => $params['username']));
+      $message['body'][] = t('感謝您對 318 公民運動的關注以及本網站指認與授權系統的使用。');
+      $message['body'][] = t('請您依以下步驟，寄回授權書，方才完成指認作業。');
+      $message['body'][] = t('<ol>');
+      $message['body'][] = t('<li><strong>雙面列印授權書</strong><br>');
+      $message['body'][] = t('本授權書，有提供一面為免郵資信封（即免貼郵票），若您在台灣國內，請列印檔名以 taiwan 結尾的PDF文件，若您在台灣以外的國家，請列印檔名以 abroad 結尾的PDF文件。</li>');
+      $message['body'][] = t('<li><strong>簽名欄親筆簽名，請正楷簽名，不可塗改、寫簡體字</strong></li>');
+      $message['body'][] = t('<li><strong>寄送</strong><br>');
+      $message['body'][] = t('您可使用授權書的免郵資信封，於三方封口黏貼膠帶後直接置入郵遞信箱。但若您若信紙太薄或是膠帶封口不完整，可能會造成信封脫落的狀況，授權書可能無法順利寄到。您亦可自行至郵局依信封上的地址 及收件人寄送。</li>');
+      $message['body'][] = t('<li><strong>我們收到信後，才算是完成整個授權指認作業哦。</strong><br>');
+      $message['body'][] = t('收到信後，我們會進行再一次驗證作業，並通知您（Email / 電話），完成作業。</li>');
+      $message['body'][] = t('</ol>');
+      //$message['body'][] = t('');
+      $message['body'][] = t('<p>這是系統寄信，請勿直接回信，若有疑問請寄至 contact@318.io</p>');
+      //$message['body'][] = t('');
+      $message['body'][] = t('<p>318 公民運動史料徵集小組 敬上</p>');
+      //$message['body'][] = t('<p><a href="http://@host/@path_to_file">Download</a></p>', array('@host' => $params['host'], '@path_to_file' => $params['path_to_file']));
+
+      // Add attachment when available.
+      if (isset($params['attachment_en'])) {
+        $message['params']['attachments'][] = $params['attachment_en'];
+      }
+      if (isset($params['attachment_tw'])) {
+        $message['params']['attachments'][] = $params['attachment_tw'];
+      }
+      break;
+    case 'admin_mail':
+      //dbug_message($params);
+      $message['subject'] = t('藏品 @collection_id 已被指認，指認編號為 @claim_id', array('@collection_id' => $params['collection_id'], '@claim_id' => $params['claim_id']));
+      $message['body'][] = t('指認人: @real_name', array('@real_name' => $params['real_name']));
+      $message['body'][] = t('Email: @email', array('@email' => $params['email']));
+      $message['body'][] = t('通訊地址: @address', array('@address' => $params['address']));
+      $message['body'][] = t('連絡電話: @phone', array('@phone' => $params['phone']));
+      $message['body'][] = t('身份證後四碼: @four_digitid', array('@four_digitid' => $params['four_digitid']));
+      $message['body'][] = t('備註: @note', array('@note' => $params['note']));
+      //$message['body'][] = t('<p><a href="http://@host/@path_to_file">Download</a></p>', array('@host' => $params['host'], '@path_to_file' => $params['path_to_file']));
+
+      // Add attachment when available.
+      if (isset($params['attachment_en'])) {
+        $message['params']['attachments'][] = $params['attachment_en'];
+      }
+      if (isset($params['attachment_tw'])) {
+        $message['params']['attachments'][] = $params['attachment_tw'];
+      }
+      break;
+  }
+}
+
+
+/**
+ * Implement hook_user_update()
+ *
+ *
+ *
+$account = {
+  ["uid"]  => string(2) "69"
+  ["name"] => string(8) "chinlung"
+  ["pass"] => string(55) "$S$Dhsj.Ebv.X6tySq2uEAhHErhKmV9DvY2usCLPq9D1yj7klvYYHtY"
+  ["mail"]  => string(18) "chinlung@gmail.com"
+  ["theme"] => string(0) ""
+  ["signature"] => string(0) ""
+  ["signature_format"] => string(10) "plain_text"
+  ["created"] => string(10) "1431588634"
+  ["access"]  => string(1) "0"
+  ["login"]   => string(1) "0"
+  ["status"]  => string(1) "1"
+  ["timezone"] => NULL
+  ["language"] => string(0) ""
+  ["picture"] => string(1) "0"
+  ["init"] => string(18) "chinlung@gmail.com"
+  ["data"] => bool(false)
+  ["roles"][2] => string(18) "authenticated user"
+  ["field_phone"]["und"][0]["value"] => string(14) "+886 921351259"
+  ["metatags"] => array(0) {}
+  ["logintoboggan_email_validated"] => bool(true)
+  ["addto_newauthor_table"] => bool(true)
+}
+*/
+
+function collclaim_user_update(&$edit, $account) {
+
+  $author = array(
+    'uid'         => $account->uid,
+    'login_name'  => $account->name,
+    'real_name'   => $account->field_realname['und'][0]['value'],
+    'email'       => $account->mail,
+    'phone'       => $account->field_phone['und'][0]['value'],
+    'address'     => $account->field_address['und'][0]['value'],
+    '4digitid'    => $account->field_4digitid['und'][0]['value'],
+    'created'     => $account->created
+  );
+
+  if ($account->logintoboggan_email_validated && !isset($account->addto_newauthor_table)) {
+    $account->addto_newauthor_table = TRUE;
+    _collclaim_add_author($author);
+  } else {
+    _collclaim_update_author($author['uid'], $author);
+  }
+
+}
+
+function collclaim_user_delete($account) {
+  _collclaim_del_author($account->uid);
+}
+
+function collclaim_user_login(&$edit, $account) {
+  if(isset($_SESSION['claim_before_login'])) {
+    $togo = $_SESSION['claim_before_login'];
+    unset($_SESSION['claim_before_login']);
+    drupal_goto('collection/identify/' . $togo);
+  }
+}
+
+
+function collclaim_form_alter(&$form, &$form_state, $form_id) {
+  //dbug_message($form_id);
+
+  switch($form_id) {
+    case 'user_register_form' :
+      //dbug_message($form);
+      $form['account']['name']['#title'] = "帳號 (Name)";
+      $form['account']['mail']['#title'] = "電子郵件 (E-mail address)";
+      $form['account']['mail']['#description'] = '';
+      //$form['account']['pass']['#title'] = "blabla";
+      break;
+    case 'user_login':
+      $form['name']['#title'] = "帳號 (Name)";
+      $form['pass']['#title'] = "密碼 (Password)";
+      break;
+    case 'user_pass_reset':
+      //dbug_message($form);
+      $form['message']['#markup'] = "<p>您已完成驗証程序，您現在可以進行藏品的指認。</p><p>請點選下面按鈕登入網站。</p>";
+      $form['help']['#markup'] = "<p>這個登入連結僅能使用一次。若需更改密碼，請記得設定新密碼。</p>";
+      $form['actions']['submit']['#value'] = "登入進行指認";
+      break;
+    default:
+  }
+}
+
+
+/*
+ * overwrite the form radios processing function
+ * reference
+ *   https://api.drupal.org/api/drupal/developer!topics!forms_api_reference.html/7#radio
+ *   https://api.drupal.org/api/drupal/includes!form.inc/function/form_process_radios/7
+ */
+
+function collclaim_element_info_alter(&$info) {
+  // You might want more advanced logic here, to replace instead of override altogether,
+  // in case other modules have already altered the core info.
+  $info['radios']['#process'] = array('collclaim_process_radios');
+}
+
+function collclaim_process_radios($element) {
+ if (count($element ['#options']) > 0) {
+    $weight = 0;
+    foreach ($element ['#options'] as $key => $choice) {
+      // Maintain order of options as defined in #options, in case the element
+      // defines custom option sub-elements, but does not define all option
+      // sub-elements.
+      $weight += 0.001;
+
+      $element += array($key => array());
+      // Generate the parents as the autogenerator does, so we will have a
+      // unique id for each radio button.
+      $parents_for_id = array_merge($element ['#parents'], array($key));
+      $element [$key] += array(
+        '#type' => 'radio',
+        '#title' => $choice,
+        '#suffix' => $element['#option_suffixs'][$key],                       // <<--- My add on 2015.09.19
+        // The key is sanitized in drupal_attributes() during output from the
+        // theme function.
+        '#return_value' => $key,
+        // Use default or FALSE. A value of FALSE means that the radio button is
+        // not 'checked'.
+        '#default_value' => isset($element ['#default_value']) ? $element ['#default_value'] : FALSE,
+        '#attributes' => $element ['#attributes'],
+        '#parents' => $element ['#parents'],
+        '#id' => drupal_html_id('edit-' . implode('-', $parents_for_id)),
+        '#ajax' => isset($element ['#ajax']) ? $element ['#ajax'] : NULL,
+        '#weight' => $weight,
+      );
+    }
+  }
+  return $element;
+}

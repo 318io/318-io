@@ -1,0 +1,805 @@
+<?php
+require_once('db.php');
+
+function collclaimadmin_menu() {
+
+  $items['admin/config/coll/unverified_claim'] = array(
+    'title' => 'Claims, the unverified',
+    'description' => 'Manage the claims.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('_unverified_claim_manage_form'),
+    'access arguments' => array('admin claim'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/config/coll/verified_claim'] = array(
+    'title' => 'Claims, the verified',
+    'description' => 'Manage the verified claims.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('_verified_claim_manage_form'),
+    'access arguments' => array('admin claim'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/config/coll/conflict_claim'] = array(
+    'title' => 'Claims, the conflicts',
+    'description' => 'Claims, the conflicts.',
+    'page callback' => '_conflict_table',
+    'access arguments' => array('admin claim'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/config/coll/delete_claim/%'] = array(
+    'title' => 'Delete a claim.',
+    'description' => 'delete a claim.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('_claim_delete_form', 4),
+    'access arguments' => array('admin claim'),
+    'type' => MENU_CALLBACK,
+  );
+
+  // 回復為未確認狀態
+  $items['admin/config/coll/unverify_claim/%'] = array(
+    'title' => 'Unverify a claim.',
+    'description' => 'unverify a claim.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('_claim_unverify_form', 4),
+    'access arguments' => array('admin claim'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['admin/config/coll/verify_conflict_claim/%'] = array(
+    'title' => 'Verify a conflict claim.',
+    'description' => 'verify a conflict claim.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('_verify_conflict_claim_form', 4),
+    'access arguments' => array('admin claim'),
+    'type' => MENU_CALLBACK,
+  );
+
+  $items['ack_send/%'] = array(
+    'title' => 'Resend PDF',
+    'description' => 'Send ack mail to author.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('_claimadmin_ackmail_form', 1),
+    'access arguments' => array('admin claim'),
+    'type' => MENU_CALLBACK,
+  );
+
+  return $items;
+}
+
+
+function collclaimadmin_permission() {
+  return array(
+    'admin claim' => array(
+      'title' => t('admin claim'),
+      'description' => t('Perform admin tasks for collection claim.'),
+    ),
+  );
+}
+
+function _claimadmin_ackmail_form($form, &$form_state, $claim_id) {
+  global $user;
+
+  $claim = get_claim_by_id($claim_id);
+
+  $copyright_db = array(
+    0 => t('CC0 1.0 公眾領域貢獻宣告 (Public Domain Dedication)'),
+    1 => t('創用 CC 「姓名標示 3.0 台灣」授權條款及其後版本 (CC BY 3.0 TW and later)'),
+    2 => t('創用 CC 「姓名標示-相同方式分享 3.0 台灣」授權條款及其後版本 (CC BY-SA 3.0 TW and later)'),
+    3 => t('創創用 CC 「姓名標示-非商業性 3.0 台灣」授權條款及其後版本 (CC BY-NC 3.0 TW and later)'),
+    4 => t('創用 CC 「姓名標示-禁止改作 3.0 台灣」授權條款及其後版本 (CC BY-ND 3.0 TW and later)'),
+    5 => t('創用 CC 「姓名標示-非商業性-相同方式分享 3.0 台灣」授權條款及其後版本 (CC BY-NC-SA 3.0 TW and later)'),
+    6 => t('創用 CC 「姓名標示-非商業性-禁止改作 3.0 台灣」授權條款及其後版本 (CC BY-NC-ND 3.0 TW and later)'),
+    7 => t('本藏品僅供他人在合理使用範圍內使用 (Fair Use)')
+  );
+
+  if(!empty($claim)) {
+
+    $header = array('Collection ID', 'Copyright', 'Attribution', 'Note', 'Date');
+
+    $copyright = $copyright_db[intval($claim['copyright'])];
+
+    $rows[] = array(l($claim['cid'], $claim['cid']), $copyright, $claim['display'], $claim['note'], format_date($claim['created']));
+    $table = theme('table', array('header' => $header, 'rows' => $rows));
+
+    $form['claim'] = array(
+      '#type' => 'item',
+      '#title' => t('是否確定寄出確認函 ?'),
+      '#markup' => $table
+    );
+
+    $form['claim_id'] = array(
+      '#type' => 'hidden',
+      '#value' => $claim_id
+    );
+
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('寄出'),
+    );
+
+    /* reference : https://www.drupal.org/node/133861 */
+    $form['cancel'] = array(
+        '#type' => 'button',
+        '#value' => t('取消'),
+        '#prefix' => '&nbsp;',
+        '#attributes' => array('onClick' => 'history.go(-1); return true;'),
+        '#post_render' => array('change_button_type'),
+    );
+    return $form;
+
+  } else {
+    drupal_set_message("_claimadmin_ackmail_form($claim_id): no such claim.");
+    drupal_goto('admin/config/coll/unverified_claim');
+  }
+}
+
+function _claimadmin_ackmail_form_submit($form , &$form_state) {
+  $claim_id = $form_state['values']['claim_id'];
+
+  $claim = get_claim_by_id($claim_id);
+
+  $login_name = $claim['login_name'];
+  $real_name  = $claim['real_name'];
+  $collection_id = $claim['cid'];
+
+  $params = array(
+    'username' => $login_name . " (" . $real_name . ")",
+    'collection_id' => $collection_id
+  );
+
+/*
+  $admin_params = array(
+    'claim_id'       => $claim_id,
+    'collection_id'  => $collection_id,
+    'real_name'      => $real_name,
+    'email'          => $email,
+    'phone'          => $phone,
+    'four_digitid'   => $four_digitid,
+    'note'           => $note,
+    'attachment_en'  => array('filepath' => $tmp_pdf_en, 'filename' => $en_letter_name),
+    'attachment_tw'  => array('filepath' => $tmp_pdf_tw, 'filename' => $tw_letter_name)
+  );
+*/
+
+  $email = $claim['email'];
+  $message = drupal_mail('collclaimadmin', 'ack_mail', $email,  language_default(), $params, $from = NULL, $send = TRUE);
+
+  if($message['result']) {
+    drupal_set_message("已經將確認函寄至 $email 。");
+    drupal_goto("admin/config/coll/unverified_claim");
+  }
+}
+
+
+function change_button_type($markup, $element) {
+  $markup = str_replace('type="submit', 'type="button', $markup);
+  return $markup;
+}
+
+function _claim_unverify_form($form, &$form_state, $claim_id) {
+
+  $claim = get_claim_by_id($claim_id);
+
+  $copyright_db = array(
+      0 => t('Public Domain Dedication'),
+      1 => t('CC BY 3.0 TW +'),
+      2 => t('CC BY-SA 3.0 TW +'),
+      3 => t('CC BY-NC 3.0 TW +'),
+      4 => t('CC BY-ND 3.0 TW +'),
+      5 => t('CC BY-NC-SA 3.0 TW +'),
+      6 => t('CC BY-NC-ND 3.0 TW +'),
+      7 => t('Fair Use')
+  );
+
+  if(!empty($claim)) {
+    $header = array('Collection ID', 'HD', 'Copyright', 'Attribution', 'Author mail', 'Author phone', 'Note', 'Date');
+
+    $copyright = $copyright_db[intval($claim['copyright'])];
+
+    $rows[] = array($claim['cid'], $claim['hd'], $copyright, $claim['display'], $claim['email'], $claim['phone'], $claim['note'], format_date($claim['created']));
+    $table = theme('table', array('header' => $header, 'rows' => $rows));
+
+    $form['claim'] = array(
+      '#type' => 'item',
+      '#title' => t('你確定要使此已指認的指認回復為未確認嗎？(Are you sure ?)'),
+      '#markup' => $table
+    );
+
+    $form['claim_id'] = array(
+      '#type' => 'hidden',
+      '#value' => $claim_id
+    );
+
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Confirm'),
+    );
+
+    /* reference : https://www.drupal.org/node/133861 */
+    $form['cancel'] = array(
+        '#type' => 'button',
+        '#value' => t('Cancel'),
+        '#prefix' => '&nbsp;',
+        '#attributes' => array('onClick' => 'history.go(-1); return true;'),
+        '#post_render' => array('change_button_type'),
+    );
+    return $form;
+  } else {
+    drupal_set_message("_claim_unverify_form($claim_id): no such claim.");
+    drupal_goto('admin/config/coll/verified_claim');
+  }
+}
+
+function _claim_unverify_form_submit($form , &$form_state) {
+  $claim_id = $form_state['values']['claim_id'];
+
+  $claim = get_verified_claim_by_id($claim_id); // get verified claim to unverify
+
+  if(!empty($claim)) {
+    $cid = $claim['cid']; // the same as node id
+    if(_make_collection_copyright_unknown($cid)) {
+      unverify_a_claim($claim_id);
+      bg_index();
+    }
+  } else {
+    drupal_set_message("_claim_unverify_form_submit($claim_id): no such claim.");
+  }
+  drupal_goto('admin/config/coll/unverified_claim');
+}
+
+
+function _claim_delete_form($form, &$form_state, $claim_id) {
+
+  $claim = get_claim_by_id($claim_id);
+
+  $copyright_db = array(
+      0 => t('Public Domain Dedication'),
+      1 => t('CC BY 3.0 TW +'),
+      2 => t('CC BY-SA 3.0 TW +'),
+      3 => t('CC BY-NC 3.0 TW +'),
+      4 => t('CC BY-ND 3.0 TW +'),
+      5 => t('CC BY-NC-SA 3.0 TW +'),
+      6 => t('CC BY-NC-ND 3.0 TW +'),
+      7 => t('Fair Use')
+  );
+
+  if(!empty($claim)) {
+    $header = array('Collection ID', 'HD', 'Copyright', 'Attribution', 'Author mail', 'Author phone', 'Note', 'Date');
+
+    $copyright = $copyright_db[intval($claim['copyright'])];
+
+    $rows[] = array($claim['cid'], $claim['hd'], $copyright, $claim['display'], $claim['email'], $claim['phone'], $claim['note'], format_date($claim['created']));
+    $table = theme('table', array('header' => $header, 'rows' => $rows));
+
+    $form['claim'] = array(
+      '#type' => 'item',
+      '#title' => t('你確定嗎？(Are you sure ?)'),
+      '#markup' => $table
+    );
+
+    $form['claim_id'] = array(
+      '#type' => 'hidden',
+      '#value' => $claim_id
+    );
+
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Delete'),
+    );
+
+    /* reference : https://www.drupal.org/node/133861 */
+    $form['cancel'] = array(
+        '#type' => 'button',
+        '#value' => t('Cancel'),
+        '#prefix' => '&nbsp;',
+        '#attributes' => array('onClick' => 'history.go(-1); return true;'),
+        '#post_render' => array('change_button_type'),
+    );
+    return $form;
+  } else {
+    drupal_set_message("_claim_delete_form($claim_id): no such claim.");
+    drupal_goto('admin/config/coll/unverified_claim');
+  }
+
+}
+
+function _claim_delete_form_submit($form , &$form_state) {
+  $claim_id = $form_state['values']['claim_id'];
+  delete_claim_by_id($claim_id);
+}
+
+function _verify_conflict_claim_form($form, &$form_state, $claim_id) {
+
+  $claim = get_unverified_claim_by_id($claim_id);
+
+  $copyright_db = array(
+      0 => t('Public Domain Dedication'),
+      1 => t('CC BY 3.0 TW +'),
+      2 => t('CC BY-SA 3.0 TW +'),
+      3 => t('CC BY-NC 3.0 TW +'),
+      4 => t('CC BY-ND 3.0 TW +'),
+      5 => t('CC BY-NC-SA 3.0 TW +'),
+      6 => t('CC BY-NC-ND 3.0 TW +'),
+      7 => t('Fair Use')
+  );
+
+  if(!empty($claim)) {
+    $header = array('Collection ID', 'HD', 'Copyright', 'Attribution', 'Author mail', 'Author phone', 'Note', 'Date');
+
+    $copyright = $copyright_db[intval($claim['copyright'])];
+
+    $rows[] = array($claim['cid'], $claim['hd'], $copyright, $claim['display'], $claim['email'], $claim['phone'], $claim['note'], format_date($claim['created']));
+    $table = theme('table', array('header' => $header, 'rows' => $rows));
+
+    $form['claim'] = array(
+      '#type' => 'item',
+      '#title' => t('你確定嗎？(Are you sure ?)'),
+      '#markup' => $table
+    );
+
+    $form['claim_id'] = array(
+      '#type' => 'hidden',
+      '#value' => $claim_id
+    );
+
+    $form['submit'] = array(
+        '#type' => 'submit',
+        '#value' => t('Verify'),
+    );
+
+    /* reference : https://www.drupal.org/node/133861 */
+    $form['cancel'] = array(
+        '#type' => 'button',
+        '#value' => t('Cancel'),
+        '#prefix' => '&nbsp;',
+        '#attributes' => array('onClick' => 'history.go(-1); return true;'),
+        '#post_render' => array('change_button_type'),
+    );
+    return $form;
+  } else {
+    drupal_set_message("_verify_conflict_claim_form($claim_id): no such claim.");
+    drupal_goto('admin/config/coll/conflict_claim');
+  }
+
+}
+
+
+/*
+ * 1. make this collection's copyright unknown.
+ * 2. verify the claim(set verified true)
+ *
+ */
+function _verify_conflict_claim_form_submit($form, &$form_state) {
+  $claim_id = $form_state['values']['claim_id'];
+
+  // modify the 'collection' field
+  $claim = get_unverified_claim_by_id($claim_id);
+
+  if(!empty($claim)) {
+    $cid = $claim['cid']; // the same as node id
+
+    if(_make_collection_copyright_unknown($cid)) {
+      verify_a_claim($claim_id); // step 2
+      bg_index();
+    }
+    /*
+    $node = node_load($cid);
+    if($node) {
+
+      $record = _get_form_record('collection', $node);
+      //dbug_message($record);
+      $record_to_save = _normalize_for_collection_save($record);
+      //dbug_message($nrecord);
+
+      $record_to_save['field_release']         = "否"; // 公眾授權與否
+      $record_to_save['field_license_note']    = "";   // 姓名標示值
+      $record_to_save['field_high_resolution'] = "";   // 高解析開放與否
+      $record_to_save['field_license']         = "";   // 釋出條款
+      $record_to_save['field_rightgranted']    = "權利狀態不明";
+      $node = _coll_item_save($record_to_save); // @ coll/coll.inc
+      ft_table_update($node); // @ expsearch
+    } else {
+      drupal_set_message("collclaimadmin::_verify_conflict_claim_form_submit(): node_load() fail.");
+    }
+    */
+  } else {
+    drupal_set_message("collclaimadmin::_verify_conflict_claim_form_submit(): no such claim in database.");
+  }
+  drupal_goto('admin/config/coll/unverified_claim');
+}
+
+/*
+ * Check all unverified claims with verified claims for conflicts.
+ *
+ * reference
+ *    https://www.drupal.org/node/156863
+ *
+ * header('Collection ID', Access, Author mail, Author phone, Note, Date)
+ * claims('cid', 'open', 'email', 'phone', 'note', 'created')
+ */
+function _conflict_table() {
+
+  $p = drupal_get_path('module', 'collclaimadmin');
+  drupal_add_css("$p/css/conflict.css");
+
+  $uclaims = get_claims(0); // get unverified claims
+
+  $header = array('Claim ID', 'Collection ID', 'HD', 'Author mail', 'Author phone', 'Note', 'Date', 'Edit');
+  //$no_yes = array('No', 'Yes');
+
+  $statement = "<p>請注意，下面顯示紅色的部份為已經確認過的(verified)認領請求，會出現此畫面表示有某些藏品被重複認領，若還是決定要確認(verify)，此藏品的權利狀態將會被回復至<span style='color:red;'>權利狀態不明</span>。建議和作者連繫後再決定。你也可從此介面直接刪除此重復的認領。</p>";
+
+  $tables = array($statement);
+
+  foreach($uclaims as $uclaim) {
+
+    //drupal_set_message($uclaim['cid']);
+
+    if(has_verified_claims_of_a_collection($uclaim['cid'])) { // has been claimed before by other author
+
+      // check if open statement are equal
+      $claims_of_same_collection = get_verified_claims_of_a_collection($uclaim['cid']);
+
+      //drupal_set_message($uclaim['open']);
+      //dbug_message($claims_of_same_collection);
+      //drupal_set_message('open'. $claims_of_same_collection[0]['open']);
+
+      $rows = array();
+      $rows[] = array($uclaim['id'],
+                      $uclaim['cid'],
+                      $uclaim['hd'],
+                      $uclaim['email'],
+                      $uclaim['phone'],
+                      $uclaim['note'],
+                      format_date($uclaim['created']),
+                      l('Verify', 'admin/config/coll/verify_conflict_claim/'. $uclaim['id']) . '&#160;&#160;&#160;' .
+                      l('Delete', 'admin/config/coll/delete_claim/'. $uclaim['id']));
+
+      foreach($claims_of_same_collection as $conflicts) {
+        $rows[] = array(array('data' => $conflicts['id'], 'class' => 'conflict'),
+                        array('data' => $conflicts['cid'], 'class' => 'conflict'),
+                        array('data' => $conflicts['hd'], 'class' => 'conflict'),
+                        array('data' => $conflicts['email'], 'class' => 'conflict'),
+                        array('data' => $conflicts['phone'], 'class' => 'conflict'),
+                        array('data' => $conflicts['note'], 'class' => 'conflict'),
+                        array('data' => format_date($conflicts['created']), 'class' => 'conflict'));
+      }
+      $tables[] = theme('table', array('header' => $header, 'rows' => $rows));
+    }
+  }
+
+  if(count($tables) == 0) {
+    return "<p>No Conflict.</p>";
+  } else {
+    return array_reduce($tables, function($acc, $item){
+      return $acc . $item;
+    }, "");
+  }
+}
+
+
+
+/*
+ * reference
+ *   1. https://api.drupal.org/api/drupal/developer!topics!forms_api_reference.html/7#tableselect
+ *   2. https://www.drupal.org/node/945102#drupal7
+ *   3. http://www.hexblot.com/blog/drupal-tableselect-fields
+ *   4.
+ */
+function _unverified_claim_manage_form($form, &$form_state) {
+
+  $copyright_db = array(
+      0 => t('Public Domain Dedication'),
+      1 => t('CC BY 3.0 TW +'),
+      2 => t('CC BY-SA 3.0 TW +'),
+      3 => t('CC BY-NC 3.0 TW +'),
+      4 => t('CC BY-ND 3.0 TW +'),
+      5 => t('CC BY-NC-SA 3.0 TW +'),
+      6 => t('CC BY-NC-ND 3.0 TW +'),
+      7 => t('Fair Use')
+  );
+
+  $header = array(
+    'id'   => array('data' => t('Claim ID'), 'field' => 'id', 'sort' => 'desc'),
+    'cid'  => array('data' => t('Collection ID'), 'field' => 'cid', 'sort' => 'desc'),
+    'hd'   => t('HD'),
+    'copyright' => array('data' => t('Copyright'), 'field' => 'copyright' ),
+    'display'   => array('data' => t('Attribution'), 'field' => 'display'),
+    'email'     => array('data' => t('Author mail'), 'field' => 'email', 'sort' => 'desc'),
+    'phone'     => array('data' => t('Author phone'), 'field' => 'phone'),
+    'note'      => t('Note'),
+    'created'   => array('data' => t('Date'), 'field' => 'created'),
+    'mosaic'    => t('Mosaic'),
+    'edit'      => t('Edit'),
+    'ack'       => t('Ack')
+  );
+
+  //$claims = get_claims(0);  // get unverified claims
+  $claims = get_sortable_claims(0, $header);
+
+  $options = array();
+
+  foreach ($claims as $claim) {
+
+    $openmosaic = (intval($claim['openmosaic']) == 1) ? '開放' : '不開放';
+
+    $options[$claim['id']] = array(
+      'id'    => $claim['id'],
+      'cid'   => array('data'=> array('#markup' => l(t($claim[cid]), $claim[cid]))),
+      //'cid'   => $claim['cid'],
+      'hd'    => $claim['hd'],
+      'copyright' => $copyright_db[intval($claim['copyright'])],
+      'display'   => $claim['display'],
+      'email' => $claim['email'],
+      'phone' => $claim['phone'],
+      'note'  => $claim['note'],
+      'created' => format_date($claim['created']),
+      'mosaic'  => $openmosaic,
+      'edit'  => array('data'=> array('#markup' => l(t('Delete'), 'admin/config/coll/delete_claim/' . $claim[id]))),
+      'ack'   => array('data'=> array('#markup' => l(t('回信'), 'ack_send/' . $claim[id])))
+    );
+  }
+
+  $form['table'] = array(
+    '#type' => 'tableselect',
+    '#header' => $header,
+    '#options' => $options,
+    '#empty' => t('No unverified claims found'),
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Verify'),
+  );
+
+  return $form;
+}
+
+/*
+ * will update ft_search table
+ * need run bg_index() after the execution.
+ */
+function confirm_the_claim($claim_id) {
+
+  // field_license (釋出條款) TAG string
+  $copyright_db = array(
+      0 => t('CC0 1.0'),
+      1 => t('CC BY 3.0 TW'),
+      2 => t('CC BY-SA 3.0 TW'),
+      3 => t('CC BY-NC 3.0 TW'),
+      4 => t('CC BY-ND 3.0 TW'),
+      5 => t('CC BY-NC-SA 3.0 TW'),
+      6 => t('CC BY-NC-ND 3.0 TW'),
+      7 => t('Fair Use')
+  );
+
+  $bool_db = array(
+    0 => "否",
+    1 => "是"
+  );
+
+  // modify the 'collection' field
+  $claim = get_unverified_claim_by_id($claim_id);
+
+  if(!empty($claim)) {
+    $cid = $claim['cid']; // the same as node id
+
+    $hd_op        = intval($claim['hd']);
+    $copyright_op = intval($claim['copyright']);
+
+    $hd        = $bool_db[$hd_op];
+    $copyright = $copyright_db[$copyright_op];
+
+    $attribution = empty($claim['display']) ? $claim['real_name'] : $claim['display'];
+
+    $openmosaic_op = intval($claim['openmosaic']);
+    $openmosaic    = $bool_db[$openmosaic_op];
+
+    // field_public  (公開與否) "是/否"
+    // field_release (公眾授權與否) "是/否"
+    // field_license (釋出條款)     Term
+    // field_license_note (姓名標示值) string
+    // field_rightgranted (權利狀態) Term 權利狀態不明/已採用公眾授權/宣告為公眾領域/僅供合理使用(fair use)
+    // field_high_resolution (高解析開放與否) "是/否"
+
+    $node = node_load($cid);
+    if($node) {
+      $record = _get_form_record('collection', $node); // def at editcol.form_model.php
+      //dbug_message($record);
+      $record_to_save = _normalize_for_collection_save($record); // // def at editcol.form_model.php
+      //dbug_message($nrecord);
+
+      $record_to_save['field_release']           = "否";         // 公眾授權與否
+      $record_to_save['field_license_note']      = $attribution; // 姓名標示值
+      $record_to_save['field_high_resolution']   = $hd;          // 高解析開放與否
+      $record_to_save['field_license']           = $copyright;   // 釋出條款
+      $record_to_save['field_rightgranted_note'] = $claim_id;    // 權利依據
+      $record_to_save['field_no_mosaic']         = $openmosaic;
+
+      switch($copyright_op) {
+        case 0:
+          $record_to_save['field_rightgranted'] = "宣告為公眾領域";
+          break;
+        case 1: case 2: case 3: case 4: case 5: case 6:
+          $record_to_save['field_rightgranted'] = "已採用公眾授權";
+          break;
+        case 7:
+          $record_to_save['field_rightgranted'] = "僅供合理使用";
+          break;
+        default:
+          $record_to_save['field_rightgranted'] = "權利狀態不明";
+          break;
+      }
+
+      $node = _coll_item_save($record_to_save); // @ coll/coll.inc
+
+      ft_table_update($node); // @ expsearch
+
+      verify_a_claim($claim_id); // modify the 'claim' table's verified field
+
+      if($openmosaic_op == 1) {
+        //drupal_set_message("call _coll_digifile_open_nomosaic($claim_id)");
+        _coll_digifile_open_nomosaic($cid);       // 2015.11.18 open mosaic on demand
+        delete_all_thumbnail_of_collection($cid); // defined at editcol.upload.php
+      }
+
+      return true;
+    } else {
+      drupal_set_message("collclaimadmin::confirm_the_claim($claim_id): node_load() fail.");
+      return false;
+    }
+  } else {
+    drupal_set_message("collclaimadmin::confirm_the_claim($claim_id): no such claim in database.");
+    return false;
+  }
+}
+
+/*
+ * Retrieving the Selected Element
+ * As the form element was set as $form['table'], in the submit function,
+ * the selected value (or values) can be retrieved at $form_state['values']['table'].
+ * Any unchecked items will be given a value of 0, checked items will be given a value of the item key.
+ * We can use the array_filter function to give us only the selected items as in the example submit handler below,
+ * which will output the selected items as a Drupal message.
+*/
+function _unverified_claim_manage_form_submit($form , &$form_state) {
+  $results = array_filter($form_state['values']['table']);
+  //drupal_set_message(print_r($results , 1));
+
+  $conflicts = array();
+
+  foreach($results as $selected_claim_id) {
+    $claim = get_claim_by_id($selected_claim_id);
+
+    if(has_verified_claims_of_a_collection($claim['cid'])) { // has been claimed before by other author
+
+      $conflicts[] = $claim;
+      continue; // don't confirm this claim right now
+
+      /*
+      // check if open statement are equal
+      $claims_of_same_collection = get_verified_claims_of_a_collection($claim['cid']);
+
+      if($claim['open'] != $claims_of_same_collection[0]['open']) { // conflict open access agreement.
+        $conflicts[] = $claim;
+        continue; // don't confirm this claim
+      }
+      */
+    }
+    confirm_the_claim($selected_claim_id);
+  }
+
+  bg_index(); // defined in editcol module, used to build new index, @ expsearch ??
+
+  if(!empty($conflicts)) drupal_goto('admin/config/coll/conflict_claim');
+}
+
+
+function _verified_claim_manage_form($form, &$form_state) {
+
+  $copyright_db = array(
+      0 => t('Public Domain Dedication'),
+      1 => t('CC BY 3.0 TW +'),
+      2 => t('CC BY-SA 3.0 TW +'),
+      3 => t('CC BY-NC 3.0 TW +'),
+      4 => t('CC BY-ND 3.0 TW +'),
+      5 => t('CC BY-NC-SA 3.0 TW +'),
+      6 => t('CC BY-NC-ND 3.0 TW +'),
+      7 => t('Fair Use')
+  );
+
+  $header = array(
+    'id'   => array('data' => t('Claim ID'), 'field' => 'id', 'sort' => 'desc'),
+    'cid'  => array('data' => t('Collection ID'), 'field' => 'cid', 'sort' => 'desc'),
+    'hd'   => t('HD'),
+    'copyright' => array('data' => t('Copyright'), 'field' => 'copyright' ),
+    'display'   => array('data' => t('Attribution'), 'field' => 'display'),
+    'email'     => array('data' => t('Author mail'), 'field' => 'email', 'sort' => 'desc'),
+    'phone'     => array('data' => t('Author phone'), 'field' => 'phone'),
+    'note'      => t('Note'),
+    'created'   => array('data' => t('Date'), 'field' => 'created'),
+    'mosaic'    => t('Mosaic'),
+    'edit'      => t('Edit'),
+    'ack'       => t('Ack')
+  );
+
+
+  //$claims = get_claims(1);  // get verified claims
+  $claims = get_sortable_claims(1, $header);
+
+
+  $options = array();
+
+  foreach ($claims as $claim) {
+
+    $openmosaic = (intval($claim['openmosaic']) == 1) ? '開放' : '不開放';
+
+    $options[$claim['id']] = array(
+      'id'    => $claim['id'],
+      'cid'   => array('data'=> array('#markup' => l(t($claim[cid]), $claim[cid]))),
+      'hd'    => $claim['hd'],
+      'copyright' => $copyright_db[intval($claim['copyright'])],
+      'display'   => $claim['display'],
+      'email' => $claim['email'],
+      'phone' => $claim['phone'],
+      'note'  => $claim['note'],
+      'created' => format_date($claim['created']),
+      'mosaic'  => $openmosaic,
+      'edit'    => array('data'=> array('#markup' => l(t('回復'), 'admin/config/coll/unverify_claim/' . $claim[id]))),
+      'ack'   => array('data'=> array('#markup' => l(t('回信'), 'ack_send/' . $claim[id])))
+    );
+  }
+
+  $form['table'] = array(
+    '#type' => 'tableselect',
+    '#header' => $header,
+    '#options' => $options,
+    '#empty' => t('No verified claims found'),
+  );
+
+  $form['submit'] = array(
+    '#type' => 'submit',
+    '#value' => t('Delete'),
+    '#attributes' => array('onclick' => 'if(!confirm("Really Delete?")){return false;}')
+  );
+
+  return $form;
+}
+
+/*
+ * delete the selected verified claims
+ */
+function _verified_claim_manage_form_submit($form, &$form_state) {
+  $results = array_filter($form_state['values']['table']);
+  foreach($results as $selected_claim_id) { delete_claim_by_id($selected_claim_id); }
+}
+
+/*
+  2015.10.02 cooly add
+*/
+function collclaimadmin_mail($key, &$message, $params) {
+
+  switch($key) {
+    case 'ack_mail':
+
+      $message['headers'] = array(
+        'MIME-Version' => '1.0',
+        'Content-Type' => 'text/html; charset=UTF-8; format=flowed',
+        'Content-Transfer-Encoding' => '8Bit',
+        'X-Mailer' => 'Drupal'
+      );
+
+      $message['subject'] = t('318公民運動藏品指認回函確認: @collection_id', array('@collection_id' => $params['collection_id']));
+      $message['body'][] = t('<p>你好 @username,</p>', array('@username' => $params['username']));
+      $message['body'][] = t('<p>感謝您對 318 公民運動的關注以及本網站指認與授權系統的使用，本系統已收到您寄回的紙本授權書。</p>');
+      $message['body'][] = t('<p>我們需要7個工作天，進行人工判讀確認資料無誤，並且更新您指認的這筆藏品資料。在確認您的資料無誤之前，系統上不會顯示已指認。</p>');
+      $message['body'][] = t('<p>您可以在7天後登入系統個人帳號查詢是否指認成功。</p>');
+      $message['body'][] = t('<p>這是系統寄信，請勿直接回信，若有疑問請寄至 contact@318.io</p>');
+      $message['body'][] = t('<p></p>');
+      $message['body'][] = t('<p>318 公民運動史料徵集小組 敬上</p>');
+      break;
+  }
+}

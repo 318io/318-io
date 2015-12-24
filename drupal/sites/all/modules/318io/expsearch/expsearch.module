@@ -1,0 +1,415 @@
+<?php
+
+require_once "reasoner.php";
+require_once "sphinxapi-2.0.4.php";
+
+require_once "expsearch.admin.inc";
+
+global $kb;
+
+$kb = new KBase();
+$kb->addRule(chain('hasDesc', array('hasChild')));
+$kb->addRule(chain('hasDesc', array('hasChild', 'hasDesc')));
+
+$kb->addRule(grule(term('hasParent', 'A', 'B'),
+                   array(term('hasChild', 'B', 'A'))
+                  )
+            );
+
+$kb->addRule(grule(term('hasAnc', 'A', 'B'),
+                   array(term('hasDesc', 'B', 'A'))
+                  )
+            );
+
+_build_kbase();
+
+function _build_kbase() {
+
+  global $kb;
+
+  $term_objs = taxonomy_term_load_multiple(_term_id_array());
+
+  foreach($term_objs as $term) {
+    $parents = taxonomy_get_parents($term->tid);
+    foreach($parents as $parent) {
+      //drupal_set_message(strval($parent->tid) . ", " . strval($term->tid));
+      $kb->addFact("hasChild", array(strval($parent->tid), strval($term->tid)));
+      //drupal_set_message("hasChild(" . $parent->tid . ", " . $term->tid . ")");
+    }
+  }
+
+  // set equal
+  // $kb->setEqual('a','b')
+  // $node->job_post_company['und'][0]['value']
+  // for taxonomy term
+  //$term_id_1 = $node->field_term['und'][0]['tid'];
+  //$term_id_2 = $node->field_term['und'][1]['tid'];
+
+}
+
+
+function expsearch_menu() {
+  /*
+  // edit by ghtiun
+  */
+
+  $items['admin/config/coll/expsearch_settings'] =
+  array(
+    'title' => 'Search Expansion settings',
+    'description' => 'Select the fileds for searching.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('_expsearch_admin_settings_form'),
+    'access arguments' => array('admin collection'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  $items['admin/config/coll/expsearch_build_ft'] =
+  array(
+    'title' => 'Search Expansion Build Fulltext index',
+    'description' => 'Select the fileds for searching.',
+    'page callback' => 'drupal_get_form',
+    'page arguments' => array('_expsearch_admin_build_ft_form'),
+    'access arguments' => array('admin collection'),
+    'type' => MENU_NORMAL_ITEM,
+  );
+
+  return $items;
+}
+
+
+/*
+array {
+  ["error"]   => string(0) ""
+  ["warning"] => string(0) ""
+  ["status"]  => int(0)
+  ["fields"]  => array { [0]=> string(7) "content" }
+  ["attrs"]   => array { ["nid"]=> int(1) }
+  ["matches"] => array(93) {
+    [10001] => array(2) {
+      ["weight"]=> string(1) "1"
+      ["attrs"] =>  array(1) { ["nid"] => int(10001) }
+    }
+    [10003]=>
+    ...
+  }
+  ["total"] => string(2) "93"
+  ["total_found"] => string(2) "93"
+  ["time"] => string(5) "0.000"
+  ["words"] => array {
+    ["明信"] => array {
+      ["docs"] => string(2) "93"
+      ["hits"] => string(2) "93"
+    }
+  }
+}
+*/
+/*
+ * modified by ghtiun
+ * to avoid search all chinese chars in different
+ * basically, i just use sphinxsearch 'extended sytax' and
+ * preprocess query like 保麗龍307 to "保麗龍" "307"
+ */
+function _sphinx_query_preprocess_query($q){
+  $q = str_replace(array('-', ','), ' ', $q); // todo
+  $q = preg_replace('%([a-zA-Z0-9]+)%', ' $1 ', $q);
+  $q = preg_replace('%\s{2,}%', ' ', $q);
+  $ar = explode(' ', $q);
+  $q = '"'.implode('" "', $ar).'"';
+  return $q;
+}
+
+function sphinx_query($query, $index, $any = false) {
+  $cl = new SphinxClient();
+  if(!$any){
+    $cl->SetMatchMode(SPH_MATCH_EXTENDED); //add by ghtiun 0319
+    $query = _sphinx_query_preprocess_query($query); // add by ghtiun 0319
+  }
+
+  $cl->SetLimits(0, 1);
+
+  $peek_result = $cl->Query($query, $index);
+
+  $total = isset($peek_result['total_found']) ? intval($peek_result['total_found']) : 0 ;
+
+  if($total == 0) return array();
+
+  $cl->SetLimits(0,$total);
+  $result = $cl->Query($query, $index);
+
+  $matches = isset($result['matches']) ? $result['matches'] : array() ;
+
+  $nids = array();
+  foreach($matches as $id => $match) {
+    $nids[] = $id;
+  }
+  return $nids;
+}
+
+function sphinx_query_orig($query, $index) {
+  $cl = new SphinxClient();
+  $cl->SetLimits(0, 1);
+
+  $peek_result = $cl->Query($query, $index);
+
+  $total = isset($peek_result['total_found']) ? intval($peek_result['total_found']) : 0 ;
+
+  if($total == 0) return array();
+
+  $cl->SetLimits(0,$total);
+  $result = $cl->Query($query, $index);
+
+  $matches = isset($result['matches']) ? $result['matches'] : array() ;
+
+  $nids = array();
+  foreach($matches as $id => $match) {
+    $nids[] = $id;
+  }
+  return $nids;
+}
+
+function ft_search($query) {
+  //drupal_set_message("doing fulltext searching.");
+  if(variable_get('index_table', 1) == 0) $index = 'idx318public';
+  else                                    $index = 'idx318archive';
+  return sphinx_query($query, $index);
+}
+
+/*
+ *  return array of tid
+ */
+function _get_related_terms($term_id) {
+  global $kb;
+
+  $_term_id = is_string($term_id) ? $term_id : strval($term_id);
+
+  if(isset($kb)) {
+    $_tids = $kb->query('hasDesc', array($_term_id, '?'));
+    //if(!empty($_tids)) dbug_message($_tids);
+    return array_map(function($item) { return intval($item[0]); }, $_tids);
+  } else {
+    drupal_set_message("_get_related_terms(): knowledge base is null.");
+    return array();
+  }
+}
+
+function term_search($term_name) {
+  // possible terms
+  $terms = taxonomy_get_term_by_name($term_name);
+
+  $pre1 = NULL;
+  foreach($terms as $term) {
+
+    //drupal_set_message("searching term " . $term->tid . "($term_name)");
+
+    $related_tids = _get_related_terms($term->tid);
+
+    //dbug_message($related_tids);
+
+    array_unshift($related_tids, $term->tid); // add itself
+
+    $pre2 = NULL;
+    foreach($related_tids as $tid) {
+      $nids = taxonomy_select_nodes($tid, FALSE);
+
+      if(isset($pre2)) $pre2 = array_unique(array_merge($pre2, $nids)); // array union
+      else             $pre2 = $nids;
+    }
+
+    if(isset($pre1)) {
+      if(isset($pre2)) $pre1 = array_unique(array_merge($pre1, $pre2)); // array union
+    } else {
+      $pre1 = $pre2;
+    }
+  }
+
+  //dbug_message($pre1);
+
+  return isset($pre1) ? $pre1 : array();
+}
+
+/*
+  2015.10.02 cooly
+  Search Token Expansion for matching tokens may be seperated by white spaces.
+  $token_array => t1 t2 t3,
+  return array of following array
+     (t1)
+     (t1 t2)
+     (t1 t2 t3)
+     (t2)
+     (t2 t3)
+     (t3)
+ */
+function expand_search_tokens($token_array) {
+
+  if(empty($token_array)) return array();
+
+  $result1 = array();
+  foreach($token_array as $token) {
+    if(empty($result1)) {
+      $result1[] = array($token);
+    } else {
+      $result1[] = array_merge($result1[count($result1)-1], array($token));
+    }
+  }
+
+  $first_tok = array_shift($token_array);
+  $result2 = expand_search_tokens($token_array); // recursive call
+
+  return array_merge($result1, $result2);
+}
+
+/*
+   post processor for expand_search_tokens
+ */
+function expand_search_tokens_pp($arr) {
+  $toks = array();
+  foreach($arr as $a) { $toks[] = implode(' ', $a); }
+  //dbug_message($toks);
+  return $toks;
+}
+
+function extract_words($str) {
+  $space_tok = " \n\t";
+
+  $ret = array();
+  $tok = strtok($str, $space_tok);
+  while($tok !== false) {
+    $ret[] = $tok;
+    $tok = strtok($space_tok);
+  }
+
+  // 2015.10.02, cooly add
+  $expanded_ret = expand_search_tokens_pp(expand_search_tokens($ret));
+  //dbug_message($expanded_ret);
+  return $expanded_ret;
+}
+
+function _node_id_array() {
+  $records = db_query("SELECT nid FROM node WHERE type = :type", array(':type' => 'collection'));
+  $ids = array();
+  foreach($records as $record) { $ids[] = $record->nid; }
+  return $ids;
+}
+
+function _term_id_array() {
+  $records = db_query("SELECT tid FROM taxonomy_term_data");
+  $ids = array();
+  foreach($records as $record) { $ids[] = $record->tid; }
+  return $ids;
+}
+
+function _reorder_array(array $a) {
+  $new_array = array();
+  foreach($a as $i) { $new_array[] = $i; }
+  return $new_array;
+}
+
+function reset_all_query() {
+  variable_set('all_query', array());
+}
+
+function check_prefix($str) {
+  $pattern = "/^(term|fulltext):\s*(.+)$/";
+  $matches = array();
+  $ret = preg_match($pattern, $str, $matches);
+  if($ret == 1) return array($matches[1], trim($matches[2]));
+  else          return array();
+}
+
+function expsearch_coll_query($query_string, $start_record, $records_per_page) {
+
+  reset_all_query(); // no cache
+
+  $term_search_only = false;
+  $ft_search_only   = false;
+
+  if(empty($query_string)) {
+    $all_ids = _node_id_array();
+  } else {
+
+    $all_ids = array();
+
+    $all_query = variable_get('all_query');
+    $old_result = !empty($all_query[$query_string]) ? $all_query[$query_string] : NULL;
+
+    if(empty($old_result)) {
+
+      $prefix_query = check_prefix($query_string);
+
+      if(!empty($prefix_query)) {
+        switch($prefix_query[0]) {
+          case 'term':
+            $term_search_only = true;
+            break;
+          case 'fulltext':
+            $ft_search_only = true;
+            break;
+        }
+        $query_string = $prefix_query[1];
+      }
+
+      $query_toks = extract_words($query_string);
+
+      //dbug_message($query_toks);
+
+      $all_ids = array_reduce($query_toks, function($acc, $tok) use($ft_search_only, $term_search_only) {
+
+        if($ft_search_only)   $termids = array();
+        else                  $termids = term_search($tok);
+        if($term_search_only) $ftids = array();
+        else                  $ftids = ft_search($tok);
+
+        $ids = DT::array_merge($termids, $ftids);
+        $ids = array_unique($ids);
+
+        //drupal_set_message("token:" . $tok);
+        //dbug_message($ids);
+
+        //if(count($ids) == 0) $ids = ft_search($tok);
+
+        if(empty($acc)) return $ids;
+        else return array_unique(array_merge($acc, $ids)); // array union
+      }, array());
+
+      // variable_set($query_string, $all_ids);
+      $all_query = variable_get('all_query', array());
+      $all_query[$query_string] = $all_ids;
+      variable_set('all_query', $all_query);
+    } else {
+      $all_ids = $old_result;
+    }
+  }
+
+  $record_count = count($all_ids);
+
+  //drupal_set_message("records: " . $record_count);
+  //drupal_set_message("start: " . $start_record);
+  //drupal_set_message("per page: " . $records_per_page);
+  /* edit by ghtiun
+  1. to prevent duplicate records, user id as key
+  2. and then we can sort result array by key
+  3. count is move to result
+  */
+
+  $all_ids = _reorder_array($all_ids);
+
+  sort($all_ids);
+
+  $page_ids = array();
+  if($start_record < $record_count) {
+    $limit = $start_record + $records_per_page;
+    for($i = $start_record; $i < $limit; $i++) {
+      if(empty($all_ids[$i])) break;
+      $page_ids[] = $all_ids[$i];
+    }
+  }
+
+
+  $result = array(
+    'qsh' => $query_string,
+    'count' => $record_count,
+    'identifier' => $page_ids,
+  );
+  //dbug_message($result);
+  return $result;
+}

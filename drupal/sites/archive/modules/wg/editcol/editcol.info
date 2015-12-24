@@ -1,0 +1,4 @@
+name = Editcol
+description = "customize collection edito form."
+package = wg
+core = 7.x

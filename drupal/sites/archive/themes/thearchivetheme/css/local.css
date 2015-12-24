@@ -1,0 +1,109 @@
+body {
+  color: #444;
+  font-family: 'Open Sans', sans-serif;
+  font-size: 15px;
+  line-height: 160%;
+  margin:0;
+  padding:0;
+}
+
+footer{
+  font-size: 85%;
+  margin-bottom:40px;
+}
+
+#page-header{
+  margin:20px 0 20px 0;
+  padding:20px 0 20px 0;
+  height:150px !important;
+  overflow:hidden;
+  text-align:center;
+  border-bottom:1px solid #ccc;
+}
+
+#page-header .site-name{
+  font-family: Georgia, serif;
+  font-size:2em;
+  color:#000;
+}
+
+.front .search-form{
+  margin:30px 0;
+  width:auto;
+  text-align: center;
+}
+
+.userinfo .notopentopublicnotice{
+  text-align:center;
+  font-size: 2em;
+  line-height: 1.5;
+  color:brown;
+}
+
+#block-user-login{
+  width:50%;
+  margin: 0 auto;
+}
+
+#block-user-login input.form-text{
+  border:1px solid #999;
+}
+
+/* Breadcrumb */
+#breadcrumb {
+  background-color: transparent;
+  margin-bottom: 30px;
+  color:#aaa;
+}
+
+
+/* node */
+body.page-node.node-type-collection .node-collection div[class*=field-type-taxonomy-term] .field-items .field-item{
+  display: inline-block;
+  margin-right:10px;
+}
+
+
+.dark input.form-text {
+  border: none;
+}
+
+select {
+  -webkit-appearance: menulist;
+}
+
+fieldset {
+  padding: 10px;
+  margin: 0 2px;
+  border: 1px solid #eaeaea;
+}
+
+legend {
+  border-bottom: none;
+  font-size: 14px;
+  width: auto;
+  margin: 0;
+}
+
+input[type="radio"], input[type="checkbox"] {
+  margin: 0px 0 3px;
+}
+
+/*buttons*/
+input[type="submit"], input[type="reset"], input[type="button"] {
+  margin: 5px 5px 10px 0;
+  background-color: #444;
+  border: none;
+  box-shadow: none;
+  color: #fff;
+  padding: 15px 24px;
+  text-transform: uppercase;
+  -webkit-border-radius: 3px;
+  -moz-border-radius: 3px;
+  border-radius: 3px;
+  color: #ffffff;
+}
+
+input[type="submit"]:hover, input[type="reset"]:hover, input[type="button"]:hover{
+  color: #ffffff;
+}

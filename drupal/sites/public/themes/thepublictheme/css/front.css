@@ -1,0 +1,104 @@
+/* front */
+
+.front #page-header{
+  height:400px;
+  background-position: center -170px;
+}
+
+.front #content-pre{
+  padding:20px 0;
+}
+
+
+.front .mainregion{
+	padding:35px 0;
+}
+
+.front #content-taxoncloud{
+	background: 	#F0FFFF;
+}
+
+.front #content-search{
+	text-align: center;
+}
+
+.front .block-title{
+  font-family: Lobster, cursive;
+  text-align:center;
+}
+
+.front #content-collhigh .node-collection{
+  position: relative;
+    padding:14px;
+    width:220px;
+    height:270px;
+}
+
+.front #content-collhigh .node-collection .featured-image{
+  position:relative;
+  border: 5px dashed #ccc;
+  width:220px;
+  height:220px;
+  padding:0px;
+  border-radius:10px;
+  overflow:hidden;
+}
+
+.front #content-collhigh .node-collection .featured-image .featuredimage.nofile{
+  text-indent:-1000em;
+}
+
+.front #content-collhigh .node-collection .featured-image:hover{
+  border-color: orange;
+}
+
+.front #content-collhigh .node-collection .featured-image .identifier{
+  position:absolute;
+  bottom:10px;
+  right:10px;
+  color:#999;
+}
+
+.front #content-collhigh .node-collection .featured-image .identifier a{
+  color:#999;
+}
+
+
+/* tagclouds **/
+
+.wrapper.tagclouds {
+  text-align : justify;
+  margin-right: 1em;
+  line-height: 32px;
+}
+
+.tagclouds.level1 {
+  font-size : 1em;
+}
+.tagclouds.level2 {
+  font-size : 1.2em;
+}
+.tagclouds.level3 {
+  font-size : 1.4em;
+}
+.tagclouds.level4 {
+  font-size : 1.6em;
+}
+.tagclouds.level5 {
+  font-size : 1.8em;
+}
+.tagclouds.level6 {
+  font-size : 2em;
+}
+.tagclouds.level7 {
+  font-size : 2.2em;
+}
+.tagclouds.level8 {
+  font-size : 2.4em;
+}
+.tagclouds.level9 {
+  font-size : 2.6em;
+}
+.tagclouds.level10 {
+  font-size : 2.8em;
+}

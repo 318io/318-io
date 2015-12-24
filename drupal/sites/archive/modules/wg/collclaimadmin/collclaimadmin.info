@@ -1,0 +1,5 @@
+name = collclaimadmin
+description = "collection claim admin"
+package = wg
+core = 7.x
+dependencies[] = editcol

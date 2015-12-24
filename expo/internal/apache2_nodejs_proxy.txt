@@ -1,0 +1,34 @@
+Enable the mod_proxy and mod_proxy_html Apache modules. 
+They should be available by default so just enable them with the a2enmod command. 
+
+sudo a2enmod proxy 
+sudo a2enmod proxy_http
+
+Now edit your virtual host file (/etc/apache2/sites-available/example.com.conf) to have reverse proxy settings. 
+Within the node, add the following: 
+
+ProxyRequests Off 
+Order deny,allow 
+Allow from all
+ProxyPass /node http://example.com:8080 
+ProxyPassReverse /node http://example.com:8080
+
+For example:
+
+<VirtualHost *:80>
+  ServerAdmin chinlung@wordgleaner.com
+  ServerName  expo.318.io
+  ErrorLog ${APACHE_LOG_DIR}/expo318.error.log
+  CustomLog ${APACHE_LOG_DIR}/aechive.access.log combined
+  ProxyRequests off
+  <Proxy *>
+      Order deny,allow
+      Allow from all
+  </Proxy>
+  <Location />
+     ProxyPass http://localhost:3000/
+     ProxyPassReverse http://localhost:3000/
+  </Location>
+</VirtualHost>
+
+Save that and restart apache with: sudo service apache2 restart

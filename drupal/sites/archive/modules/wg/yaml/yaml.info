@@ -1,0 +1,5 @@
+name = yaml
+description = drupal yaml support
+core=7.x
+
+files[] = spyc/spyc.php

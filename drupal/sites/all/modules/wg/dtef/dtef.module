@@ -1,0 +1,39 @@
+<?php
+require_once 'dtef.inc';
+require_once 'dtef.class.inc';
+
+function dtef_form_field_ui_field_edit_form_alter(&$form, &$form_state, $form_id) {
+  $field = $form_state['field'];
+  if($field && is_array($field)) {
+    $fieldname = key($field);
+
+    $fielddef = $field[$fieldname]['und']['field'];
+    if($fielddef['type'] == 'taxonomy_term_reference') {
+      $setting_id = 'subtype';
+      $value =  $fielddef['settings'][$setting_id];
+      if(!$value || ($value != 'category') ) $value = 'tag';
+      $form['field']['settings'][$setting_id] = array(
+            '#type' => 'select',
+            '#title' => t($setting_id),
+            '#options' => array(
+              'tag' => 'tag',
+              'category' => 'category',
+            ),
+            '#default_value' => $value,
+          );
+    }
+  }
+  $setting_id = 'hidden';
+  $value =  $fielddef['settings'][$setting_id];
+  if(!$value || ($value != 'hidden') ) $value = 'visible';
+  $form['field']['settings'][$setting_id] = array(
+        '#type' => 'select',
+        '#title' => t($setting_id),
+        '#options' => array(
+          'hidden' => 'hidden',
+          'visible' => 'visible',
+        ),
+        '#default_value' => $value,
+      );
+
+}
