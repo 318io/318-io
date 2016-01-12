@@ -96,7 +96,7 @@ function _collection_idv_file_update_form($nid, $filename, $op) {
     $("#uploader").plupload({
       // General settings
       runtimes : 'html5,flash,silverlight,html4',
-      url : '/collection/single_upload',
+      url : '/collection/pl_upload',
 
       multi_selection: false,
 
