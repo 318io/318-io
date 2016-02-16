@@ -1,6 +1,6 @@
 <?php
 
-define('CLAIM_DB',     'claim');    // remenber to modify the settings.php of this site
+define('CLAIM_DB',     'db_claim');    // remenber to modify the settings.php of this site
 define('CLAIM_AUTHOR', 'claim_author');
 define('CLAIM_COLL',   'claim_coll');
 
