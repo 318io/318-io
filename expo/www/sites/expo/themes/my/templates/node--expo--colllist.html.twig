@@ -1,0 +1,21 @@
+{{ content.expotool }}
+
+<section>
+  <article{{ attributes }}>
+    <div{{ content_attributes }}>
+      <div class="row expo-info">
+        <div class="col-md-3">
+          {{content.field_featuredimage}}
+        </div>
+        <div class="col-md-9">
+          <h2 class="expotitle">{{label}}</h2>
+          {{ content|without('field_featuredimage', 'field_collitem', 'expotool', 'permalink') }}
+          {{ content.permalink}}
+        </div>
+      </div>
+      <div class-"row">
+        {{content.field_collitem}}
+      </div>
+    </div>
+  </article>
+</section>

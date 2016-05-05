@@ -1,0 +1,6 @@
+name: Expo
+description: 318 expo.
+package: wg
+
+type: module
+core: 8.x

@@ -1,5 +1,0 @@
-name = wgbase
-description = A
-package = wg
-dependencies[] = dt
-core = 7.x

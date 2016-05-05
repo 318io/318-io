@@ -1,0 +1,60 @@
+{% set container = theme.settings.fluid_container ? 'container-fluid' : 'container' %}
+
+{% block main %}
+<div id="mainwrap" class="p-expo-edit">
+  <div class="page-head">
+    <h2 class="page-title">編輯個人策展</h2>
+  </div>
+      <section{{ content_attributes.addClass(content_classes) }}>
+
+        {# Highlighted #}
+        {% if page.highlighted %}
+          {% block highlighted %}
+            <div class="highlighted">{{ page.highlighted }}</div>
+          {% endblock %}
+        {% endif %}
+
+        {# Breadcrumbs #}
+        {% if breadcrumb %}
+          {% block breadcrumb %}
+            {{ breadcrumb }}
+          {% endblock %}
+        {% endif %}
+
+        {# Action Links #}
+        {% if action_links %}
+          {% block action_links %}
+            <ul class="action-links">{{ action_links }}</ul>
+          {% endblock %}
+        {% endif %}
+
+        {# Help #}
+        {% if page.help %}
+          {% block help %}
+            {{ page.help }}
+          {% endblock %}
+        {% endif %}
+
+      </section>
+
+  <section>
+    {% block content %}
+      <a id="main-content"></a>
+      {{ page.content }}
+    {% endblock %}
+  </section>
+
+
+</div>
+
+    </div>
+  </div>
+{% endblock %}
+
+{% if page.footer %}
+  {% block footer %}
+    <footer class="footer {{ container }}" role="contentinfo">
+      {{ page.footer }}
+    </footer>
+  {% endblock %}
+{% endif %}

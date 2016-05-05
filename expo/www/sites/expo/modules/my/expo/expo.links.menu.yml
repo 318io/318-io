@@ -1,0 +1,12 @@
+expo.admin_index:
+  title: Expo
+  route_name: expo.admin_index
+  parent: system.admin_config
+  description: 'Expo...'
+  position: right
+  weight: 20
+expo.settings:
+  title: 'Expo settings'
+  parent: expo.admin_index
+  description: 'Expo settings Settings.'
+  route_name: expo.settings

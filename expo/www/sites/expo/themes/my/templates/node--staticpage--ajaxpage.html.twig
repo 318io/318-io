@@ -1,0 +1,9 @@
+<article class="ajaxpage node-staticpage">
+  <header class="title">
+    <h2 class="page-title">{{ label }}</h2>
+    <h3 class="page-author">{{content.field_author_plain}}</h3>
+  </header>
+  <div{{ content_attributes }}>
+    {{ content|without('field_author_plain') }}
+  </div>
+</article>

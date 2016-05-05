@@ -1,0 +1,63 @@
+@import url(expo-stickymap.css);
+@import url(expo-list.css);
+
+h2.expotitle{
+  font-size:140%;
+}
+
+.expodesc {
+  height: 240px;
+  position: relative;
+  overflow: hidden;
+}
+.expodesc .fademe {
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  width: 100%;
+  text-align: center;
+  margin: 0;
+  padding: 60px 0 0 0;
+
+  /* "transparent" only works here because == rgba(0,0,0,0) */
+  background-image: linear-gradient(to bottom, transparent, #eee);
+}
+
+.node-expo-teaser .expodesc {
+  height: 120px;
+}
+
+#expotool{
+  z-index:50;
+  position: fixed;
+  left:0;
+  bottom: 0px;
+  width: 100%;
+  font-size:20px;
+  opacity:.9;
+}
+#expotool > .wrapper{
+  margin: 0 auto;
+  width: 650px;
+  border:1px solid #333;
+  border-bottom:none;
+  border-top-left-radius:15px;
+  border-top-right-radius:15px;
+  background:#333;
+  text-align:center;
+  font-size:17px;
+}
+
+#expotool a{
+  display: inline-block;
+  margin: 5px 5px 0 5px;
+  padding:5px 5px !important;
+}
+
+.field--name-field-tag{
+  margin:1em 0;
+}
+
+.field--name-field-tag > div {
+  padding:3px;
+}

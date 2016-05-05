@@ -1,0 +1,27 @@
+<?php
+require_once 'WG.php';
+
+use Drupal\wg\DT;
+
+function wg_theme_suggestions_page_alter(&$suggestions, $vars) {
+  $node = \Drupal::routeMatch()->getParameter('node');
+  if ($node) {
+    if(!is_object($node)) $node = node_load($node);
+    if($node) {
+      $type = $node->getType();
+      $suggestions[] = 'page__node__'.$type;
+      $current_path = \Drupal::service('path.current')->getPath();
+      $current_uri = \Drupal::request()->getRequestUri();
+      if($current_path != $current_uri) {
+        $s = substr($current_uri, 1);
+        $s = strtolower($s);
+        $s = preg_replace('%[^a-z0-9]%', '-', $s);
+        $suggestions[] = 'page__'.$s;
+
+      }
+      if(preg_match('%edit$%', $current_path)) {
+        $suggestions[] = 'page__node__edit__'.$type;
+      }
+    }
+  }
+}

@@ -1,0 +1,4 @@
+admin expo item:
+  title: 'Admin expo item'
+  description: 'set expo item to highlight, hide... etc.'
+  restrict access: TRUE

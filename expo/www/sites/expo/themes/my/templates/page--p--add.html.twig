@@ -1,0 +1,29 @@
+{% set container = theme.settings.fluid_container ? 'container-fluid' : 'container' %}
+
+{% block main %}
+<div id="mainwrap" class="p-expo-edit">
+  <div class="page-head">
+    <h2 class="page-title">新增個人策展</h2>
+  </div>
+
+  <section>
+    {% block content %}
+      <a id="main-content"></a>
+      {{ page.content }}
+    {% endblock %}
+  </section>
+
+
+</div>
+
+    </div>
+  </div>
+{% endblock %}
+
+{% if page.footer %}
+  {% block footer %}
+    <footer class="footer {{ container }}" role="contentinfo">
+      {{ page.footer }}
+    </footer>
+  {% endblock %}
+{% endif %}

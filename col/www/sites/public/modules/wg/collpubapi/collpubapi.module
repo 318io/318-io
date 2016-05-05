@@ -1,0 +1,28 @@
+<?php
+require_once 'collpubapi.inc';
+
+function collpubapi_menu() {
+  $items['api/getcol'] =
+    array(
+      'title' => 'collection',
+      'description' => 'collection.',
+      'page callback' => '_collpubapi_getcol',
+      'access arguments' => array('view collection'),
+    );
+  return $items;
+}
+
+/*
+DROP table if exists col_api_data;
+CREATE TABLE `col_api_data` (
+  `identifier` int(10) unsigned NOT NULL,
+  `type` varchar(255) DEFAULT NULL,
+  `icon` varchar(255) DEFAULT NULL,
+  `icon_info` longtext,
+  `thumb` varchar(255) DEFAULT NULL,
+  `medium` varchar(255) DEFAULT NULL,
+  `text` longtext,
+  PRIMARY KEY (`identifier`)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8;
+
+*/

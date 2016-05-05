@@ -1,0 +1,74 @@
+expo.admin_index:
+  path: '/admin/config/expo'
+  defaults:
+    _controller: '\Drupal\system\Controller\SystemController::systemAdminMenuBlockPage'
+    _title: 'Expo'
+  requirements:
+    _permission: 'access administration pages'
+
+expo.settings:
+  path: '/admin/config/expo/settings'
+  defaults:
+    _form: 'Drupal\expo\Form\ExpoSettingsForm'
+    _title: 'Expo Settings'
+  requirements:
+    _permission: 'administer site configuration'
+
+expo.ajaxcontent:
+  path: '/ajax-page/{type}/{id}'
+  defaults:
+    _controller: '\Drupal\expo\Controller\ExpoController::content_ajax_page'
+    _title: 'expo'
+  requirements:
+    _permission: 'access content'
+    type: '[a-z]+'
+    id: \d+
+
+expo.add:
+  path: '/p/add'
+  defaults:
+    _form: 'Drupal\expo\Form\ExpoEditForm'
+    _title: 'Add Expo'
+  requirements:
+    _permission: 'access content'
+expo.edit:
+  path: '/p/edit/{hash}'
+  defaults:
+    _form: 'Drupal\expo\Form\ExpoEditForm'
+    _title: 'Edit Expo'
+  requirements:
+    _permission: 'access content'
+    hash: '[a-z0-9]{6}'
+
+expo.edit.highlight:
+  path: '/p/edithighlight/{id}/{stat}'
+  defaults:
+    _controller: '\Drupal\expo\Form\ExpoEditForm::content_edithighlight'
+    _title: 'expo'
+  requirements:
+    _permission: 'admin expo item'
+    id: \d+
+    stat: '[01]'
+
+expo.add.public318search:
+  path: '/expo/add/public318search'
+  defaults:
+    _controller: '\Drupal\expo\Form\ExpoEditForm::content_public318search'
+    _title: 'expo'
+  requirements:
+    _permission: 'access content'
+expo.add.public318add:
+  path: '/expo/add/public318add'
+  defaults:
+    _controller: '\Drupal\expo\Form\ExpoEditForm::content_public318add'
+    _title: 'expo'
+  requirements:
+    _permission: 'access content'
+expo.add.public318edit:
+  path: '/expo/add/public318edit/{id}'
+  defaults:
+    _controller: '\Drupal\expo\Form\ExpoEditForm::content_public318edit'
+    _title: 'expo'
+  requirements:
+    _permission: 'access content'
+    id: \d+

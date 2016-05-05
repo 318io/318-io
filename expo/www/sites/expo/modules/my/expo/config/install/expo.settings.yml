@@ -1,0 +1,9 @@
+schema:
+  base: 'public://public318'
+  media: '/media'
+  json: '/json'
+ns:
+  public318: 'http://loc.public.318.test'
+easter_egg:
+  image: 'public://expo/sunflower.png'
+  nid: 152

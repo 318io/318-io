@@ -1,0 +1,81 @@
+{% set container = theme.settings.fluid_container ? 'container-fluid' : 'container' %}
+
+<div role="main" class="page-global-wrapper {{ container }} page-our318">
+  <div class="row">
+    <div class="page-head">
+      <h2 class="page-title">{{nodetitle}}</h2>
+        {{ page.navigation }}
+
+    </div>
+
+{% block main %}
+  <div role="main" class="main-container">
+
+      {# Content #}
+      {%
+        set content_classes = [
+          page.sidebar_first and page.sidebar_second ? 'col-sm-6',
+          page.sidebar_first or page.sidebar_second ? 'col-sm-9',
+          page.sidebar_first is empty and page.sidebar_second is empty ? 'col-sm-12'
+        ]
+      %}
+      <section{{ content_attributes.addClass(content_classes) }}>
+
+        {# Highlighted #}
+        {% if page.highlighted %}
+          {% block highlighted %}
+            <div class="highlighted">{{ page.highlighted }}</div>
+          {% endblock %}
+        {% endif %}
+
+        {# Breadcrumbs #}
+        {% if breadcrumb %}
+          {% block breadcrumb %}
+            {{ breadcrumb }}
+          {% endblock %}
+        {% endif %}
+
+        {# Action Links #}
+        {% if action_links %}
+          {% block action_links %}
+            <ul class="action-links">{{ action_links }}</ul>
+          {% endblock %}
+        {% endif %}
+
+        {# Help #}
+        {% if page.help %}
+          {% block help %}
+            {{ page.help }}
+          {% endblock %}
+        {% endif %}
+
+        {# Content #}
+        {% block content %}
+          <a id="main-content"></a>
+          {{ page.content }}
+        {% endblock %}
+      </section>
+
+      {# Sidebar Second #}
+      {% if page.sidebar_second %}
+        {% block sidebar_second %}
+          <aside class="col-sm-3" role="complementary">
+            {{ page.sidebar_second }}
+          </aside>
+        {% endblock %}
+      {% endif %}
+    </div>
+  </div>
+{% endblock %}
+
+{% if page.footer %}
+  {% block footer %}
+    <footer class="footer {{ container }}" role="contentinfo">
+      {{ page.footer }}
+    </footer>
+  {% endblock %}
+{% endif %}
+
+
+  </div>
+</div>

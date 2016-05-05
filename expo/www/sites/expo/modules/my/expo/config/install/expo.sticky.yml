@@ -1,0 +1,1078 @@
+map:
+  1: 'g4'
+  2: 'a6'
+  3: 'b5'
+  4: 'h1'
+  5: 'h6'
+  6: 'a0'
+  7: 'e0'
+  8: 'e7'
+  9: 'c3'
+  10: 'f0'
+  11: 'a8'
+  12: 'e6'
+  13: 'g6'
+  14: 'g7'
+  15: 'd3'
+  16: 'f7'
+  17: 'd3'
+  18: 'a3'
+  19: 'b5'
+  20: 'e1'
+  21: 'b9'
+  22: 'd1'
+  23: 'g7'
+  24: 'c8'
+  25: 'f3'
+  26: 'd1'
+  27: 'e4'
+  28: 'e7'
+  29: 'a8'
+  30: 'h2'
+  31: 'd8'
+  32: 'g2'
+  33: 'c8'
+  34: 'g3'
+  35: 'h0'
+  36: 'c3'
+  37: 'd3'
+  38: 'f6'
+  39: 'h7'
+  40: 'f1'
+  41: 'b4'
+  42: 'f3'
+  43: 'c3'
+  44: 'd3'
+  45: 'h2'
+  46: 'a3'
+  47: 'c3'
+  48: 'f9'
+  49: 'g1'
+  50: 'b5'
+  51: 'a8'
+  52: 'h4'
+  53: 'b9'
+  54: 'c8'
+  55: 'b9'
+  56: 'a6'
+  57: 'g5'
+  58: 'a5'
+  59: 'a1'
+  60: 'f5'
+  61: 'e3'
+  62: 'f1'
+  63: 'g9'
+  64: 'd3'
+  65: 'c3'
+  66: 'b2'
+  67: 'h5'
+  68: 'b9'
+  69: 'b5'
+  70: 'b2'
+  71: 'e2'
+  72: 'e9'
+  73: 'f8'
+  74: 'd9'
+  75: 'a8'
+  76: 'e5'
+  77: 'g0'
+  78: 'a2'
+type:
+  a0:
+    w: 32
+    h: 28
+    ar:
+      2:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 15
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+      5:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 8
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 7
+  a1:
+    w: 34
+    h: 29
+    ar:
+      2:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 15
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 7
+  a2:
+    w: 36
+    h: 29
+    ar:
+      2:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 15
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 7
+  a3:
+    w: 34
+    h: 30
+    ar:
+      2:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 15
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 7
+  a5:
+    w: 36
+    h: 30
+    ar:
+      2:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 15
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 7
+  a6:
+    w: 32
+    h: 31
+    ar:
+      2:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 15
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 7
+  a8:
+    w: 33
+    h: 31
+    ar:
+      2:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 15
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 7
+  b2:
+    w: 34
+    h: 31
+    ar:
+      2:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 15
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 7
+  b4:
+    w: 36
+    h: 31
+    ar:
+      2:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 15
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 7
+  b5:
+    w: 32
+    h: 32
+    ar:
+      2:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 15
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 7
+  b9:
+    w: 33
+    h: 32
+    ar:
+      2:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 15
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 7
+  c3:
+    w: 34
+    h: 32
+    ar:
+      2:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 15
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 7
+  c8:
+    w: 35
+    h: 32
+    ar:
+      2:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 15
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 7
+  d1:
+    w: 32
+    h: 33
+    ar:
+      2:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 15
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 7
+  d3:
+    w: 33
+    h: 33
+    ar:
+      2:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 15
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 7
+  d8:
+    w: 34
+    h: 33
+    ar:
+      2:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 15
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 7
+  d9:
+    w: 35
+    h: 33
+    ar:
+      2:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 15
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 7
+  e0:
+    w: 32
+    h: 34
+    ar:
+      2:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 15
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 7
+  e1:
+    w: 34
+    h: 34
+    ar:
+      2:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 15
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 7
+  e2:
+    w: 33
+    h: 46
+    ar:
+      2:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 15
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 7
+  e3:
+    w: 34
+    h: 46
+    ar:
+      2:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 15
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 7
+  e4:
+    w: 38
+    h: 46
+    ar:
+      2:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 15
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 7
+  e5:
+    w: 33
+    h: 47
+    ar:
+      2:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 15
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 7
+  e6:
+    w: 46
+    h: 45
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 16
+      6:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 14
+      9:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 12
+      12:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 10
+  e7:
+    w: 48
+    h: 46
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 16
+      6:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 14
+      9:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 12
+      12:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 10
+  e9:
+    w: 49
+    h: 46
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 16
+      6:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 14
+      9:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 12
+      12:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 10
+  f0:
+    w: 48
+    h: 47
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 16
+      6:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 14
+      9:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 12
+      12:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 10
+  f1:
+    w: 49
+    h: 47
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 16
+      6:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 14
+      9:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 12
+      12:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 10
+  f3:
+    w: 49
+    h: 48
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 16
+      6:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 14
+      9:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 12
+      12:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 10
+  f5:
+    w: 65
+    h: 30
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 16
+      6:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 14
+      9:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 13
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 10
+  f6:
+    w: 59
+    h: 31
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 16
+      6:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 14
+      9:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 13
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 10
+  f7:
+    w: 56
+    h: 32
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 16
+      6:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 14
+      9:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 13
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 10
+  f8:
+    w: 59
+    h: 32
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 16
+      6:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 14
+      9:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 13
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 10
+  f9:
+    w: 57
+    h: 33
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 16
+      6:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 14
+      9:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 13
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 10
+  g0:
+    w: 60
+    h: 33
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 16
+      6:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 14
+      9:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 13
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 10
+  g1:
+    w: 64
+    h: 33
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 16
+      6:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 14
+      9:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 13
+      10:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 10
+  g2:
+    w: 57
+    h: 56
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 16
+      6:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 14
+      9:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 15
+      12:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 13
+  g3:
+    w: 66
+    h: 63
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 16
+      6:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 14
+      9:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 15
+      12:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 13
+  g4:
+    w: 71
+    h: 72
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 16
+      6:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 14
+      9:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 15
+      12:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 13
+  g5:
+    w: 77
+    h: 86
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 16
+      6:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 14
+      9:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 15
+      12:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 13
+  g6:
+    w: 79
+    h: 90
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 16
+      6:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 14
+      9:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 15
+      12:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 13
+  g7:
+    w: 70
+    h: 31
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 16
+      6:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 14
+      9:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 13
+      12:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+  g9:
+    w: 76
+    h: 31
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 16
+      6:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 14
+      9:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 13
+      12:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+  h0:
+    w: 69
+    h: 32
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 16
+      6:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 14
+      9:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 13
+      12:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+  h1:
+    w: 69
+    h: 33
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 16
+      6:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 14
+      9:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 13
+      12:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+  h2:
+    w: 70
+    h: 33
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 16
+      6:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 14
+      9:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 13
+      12:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+  h4:
+    w: 72
+    h: 33
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 16
+      6:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 14
+      9:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 13
+      12:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+  h5:
+    w: 78
+    h: 33
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 16
+      6:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 14
+      9:
+        t: 'label'
+        gravity: 'west'
+        fontsize: 13
+      12:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 11
+  h6:
+    w: 33
+    h: 72
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 15
+    verticle: true
+  h7:
+    w: 34
+    h: 87
+    ar:
+      2:
+        t: 'label'
+        gravity: 'center'
+        fontsize: 18
+      4:
+        t: 'caption'
+        gravity: 'north'
+        fontsize: 15
+    verticle: true

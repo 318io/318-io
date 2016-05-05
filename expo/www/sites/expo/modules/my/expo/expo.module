@@ -1,0 +1,127 @@
+<?php
+require_once 'expo.inc';
+require_once 'expo.helper.inc';
+
+use Drupal\wg\DT;
+use Drupal\wg\WG;
+use Drupal\expo\Sticky;
+
+use Drupal\Core\Url;
+use Drupal\Component\Serialization\Json;
+use Drupal\Component\Utility\SafeMarkup;
+
+use Drupal\field_collection\Entity\FieldCollectionItem;
+
+function expo_mail($key, &$message, $params) {
+  $options = array(
+               'langcode' => $message['langcode'],
+             );
+
+  switch ($key) {
+    case 'mailhash':
+      $message['from'] = 'expo@318.test';
+      $message['subject'] = t('@title', array('@title' => $params['title']), $options);
+      $body = implode("\n", $params['message']);
+      $message['body'][] = SafeMarkup::checkPlain($body);
+      break;
+  }
+}
+
+function expo_entity_view_mode_alter(&$view_mode, Drupal\Core\Entity\EntityInterface $entity, $context) {
+  if ($entity->getEntityTypeId() == 'node' && $entity->getType() == 'expo' ) {
+    if($view_mode == 'full') {
+      if(WG::entity_get_field_value($entity, 'field_showinfront') == 1) $view_mode = 'front';
+      $view = DT::array_get($_GET, 'view');
+      if($view) {
+        if($view == 'list') $view_mode = 'colllist';
+      } else {
+        $cnt = count($entity->field_collitem);
+        if($cnt <= 30) $view_mode = 'colllist';
+      }
+    }
+  }
+}
+
+function expo_node_view(array &$build, \Drupal\Core\Entity\EntityInterface $entity, \Drupal\Core\Entity\Display\EntityViewDisplayInterface $display, $view_mode) {
+  $type = $entity->getType();
+  switch($type) {
+    case 'expo':
+      $author = WG::entity_get_field_value($entity, 'field_author_plain');
+      $last_changed = format_date($entity->getChangedTime(), 'html_date');
+      $build['meta'] = array(
+                         '#markup' => $author.', '.$last_changed,
+                         '#type' => 'item',
+                         '#title' => '',
+                       );
+      $func = '_expo_node_view_expo_'.$view_mode;
+      if(is_callable($func)) $func($build, $entity, $display, $view_mode);
+      break;
+    case 'staticpage':
+      switch($view_mode) {
+        case 'ajaxpage':
+          $editlink = '';
+          if($entity->access('edit')) {
+            $editlink = '<a href="/node/'.$entity->id().'/edit" class="btn btn-primary">編輯</a>';
+          }
+          $build['editlink'] = array('#markup' => $editlink,);
+          break;
+      }
+      break;
+    case 'story':
+      switch($view_mode) {
+        case 'ajaxpage':
+          $editlink = '';
+          if($entity->access('edit')) {
+            $editlink = '<a href="/node/'.$entity->id().'/edit" class="btn btn-primary">編輯</a>';
+          }
+          $build['editlink'] = array('#markup' => $editlink,);
+          break;
+      }
+      break;
+  }
+}
+
+function expo_form_alter(&$form, \Drupal\Core\Form\FormStateInterface $form_state, $form_id) {
+  if($form_id == 'node_expo_edit_form' || $form_id == 'node_expo_form') {
+    $form['#attached']['library'] = array('expo/expo.editform');
+  }
+}
+
+function expo_entity_extra_field_info() {
+  $extra = array();
+  $extra['node']['expo']['display']['meta'] = array(
+        'label' => t('meta'),
+        'description' => 'desc',
+        'weight' => 0,
+        'visible' => FALSE,
+      );
+  $extra['node']['expo']['display']['changed'] = array(
+        'label' => t('Last modified'),
+        'description' => 'desc',
+        'weight' => 0,
+        'visible' => FALSE,
+      );
+  $extra['node']['expo']['display']['permalink'] = array(
+        'label' => t('permalink'),
+        'description' => 'desc',
+        'weight' => 0,
+        'visible' => FALSE,
+      );
+  return $extra;
+}
+
+function expo_entity_view(array &$build, \Drupal\Core\Entity\EntityInterface $entity, \Drupal\Core\Entity\Display\EntityViewDisplayInterface $display, $view_mode) {
+  if($entity->getEntityTypeId() == 'field_collection_item' && $entity->bundle() == 'field_collitem') {
+    _expo_field_collitem_view_list($build, $entity, $display, $view_mode);
+  }
+}
+
+function expo_preprocess_page(&$vars) {
+  if(isset($vars['node'])) {
+    $node = $vars['node'];
+    if($node) {
+      $title = $node->getTitle();
+      $vars['nodetitle'] = $title;
+    }
+  }
+}

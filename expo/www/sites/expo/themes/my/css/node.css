@@ -1,0 +1,40 @@
+.ajaxpage.node-staticpage {
+}
+
+.ajaxpage.node-staticpage header {
+  border-left: 4px solid #fbde82;
+  padding-bottom: 9px;
+  padding-left: 20px;
+  border-bottom: 1px solid #eee;
+	margin:0 0 15px 0;
+	padding:5x;
+}
+
+.ajaxpage.node-staticpage header .page-title{
+	font-size: 180%;
+}
+
+
+.ajaxpage.node-staticpage header .page-author {
+  font-size: 120%;
+  line-height: 1;
+  color: #777;
+}
+
+.field--name-field-tag  .field--item{
+  display:inline-block;
+  background:DarkRed;
+  color:#fff;
+  font-size:15px;
+  border-radius:5px;
+}
+
+.field--name-field-tag .field--item a{
+  display:inline-block;
+  padding:2px 4px;
+  color:#fff;
+}
+
+article h2{
+  font-size:200%;
+}

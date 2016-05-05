@@ -1,0 +1,11 @@
+expo.editform:
+  version: 1.x
+  css:
+    theme:
+      css/expo.css: {}
+      css/expo-edit.css: {}
+      css/image-picker.css: {}
+  js:
+    js/expo.js: {}
+    js/image-picker.js: {}
+    js/jquery.bxslider.js: {}

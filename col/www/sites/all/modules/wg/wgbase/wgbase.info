@@ -1,0 +1,5 @@
+name = wgbase
+description = wg base functions
+package = wg
+dependencies[] = dt
+core = 7.x

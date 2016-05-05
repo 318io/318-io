@@ -1,0 +1,39 @@
+{{ content.expotool }}
+
+<div class="row">
+
+  <div class="col-sm-12 col-md-6 col-lg-5">
+    <section>
+      <article{{ attributes }}>
+        <div{{ content_attributes }}>
+          {{ content.stickymap }}
+        </div>
+      </article>
+    </section>
+  </div>
+
+  <div class="col-sm-12 col-md-6 col-lg-7">
+    <div class="row">
+      <div class="col-sm-6 col-md-5 col-lg-6">
+        <div id="stickyfeatured">
+          {{content.featuredimage}}
+        </div>
+      </div>
+
+      <div class="col-sm-6 col-md-7 col-lg-6">
+        <div id="stickymenu">
+          <div class="line"></div>
+          <div class="item-wrapper">
+            {{content.expomenu}}
+            <div class="expodesc">
+              <p>部份影像選自<a href="http://public.318.io">「318 公民運動文物紀錄典藏庫目錄」</a><br/>
+                        本網站內容皆為個人意見，不代表製作單位立場<br/>
+                        最佳解析度 800ｘ600 以上</p>
+              <div classs="permalink">本頁引用網址： {{ content.permalink }}</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>

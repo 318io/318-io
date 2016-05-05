@@ -1,0 +1,6 @@
+name = Disable user language
+description = Disables the language selector in the user profile form. [hacked]
+core = 7.x
+dependencies[] = locale
+files[] = dul.module
+files[] = dul.install

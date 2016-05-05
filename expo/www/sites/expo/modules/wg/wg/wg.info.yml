@@ -1,0 +1,6 @@
+name: WG
+description: 'wg'
+package: wg
+
+type: module
+core: '8.x'

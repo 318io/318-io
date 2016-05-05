@@ -1,0 +1,5 @@
+name = collection public api
+description = 318 collection
+core = 7.x
+package = wg coll
+dependencies[] = coll

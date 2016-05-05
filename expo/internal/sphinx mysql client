@@ -1,7 +1,0 @@
- mysql -h0 -P9306
-
-
-select * from idx318public where match('暴民');
-
-select * from idx318archive where match('暴民');
-

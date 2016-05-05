@@ -1,0 +1,23 @@
+@import url(base.css);
+@import url(layout.css);
+@import url(expo.css);
+@import url(node.css);
+
+.page-head .page-title{
+  font-size:140%;
+  font-family: 'cwTeXHei', serif;
+}
+.collitem_preview {
+  padding:5px 0 ;
+  margin-bottom:5px;
+  border-bottom:1px solid #999;
+}
+
+.veryimportant{
+  color:red;
+}
+
+.litem-desc{
+  font-size:70%;
+  padding: 10px 0;
+}
